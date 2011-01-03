@@ -1,0 +1,16 @@
+diff -r cd083843b67a pypy/translator/goal/app_main.py
+--- a/pypy/translator/goal/app_main.py	Mon Dec 20 17:17:45 2010 +0100
++++ b/pypy/translator/goal/app_main.py	Wed Dec 22 17:43:21 2010 -0500
+@@ -191,6 +191,12 @@
+     IS_WINDOWS = False
+ 
+ def get_library_path(executable):
++    # FIXME: get this from translator configuration
++    dirname = LIBRARY_INSTALLATION_PATH
++    newpath = sys.pypy_initial_path(dirname)
++    if newpath:
++        return newpath
++    
+     search = executable
+     while 1:
+         dirname = resolvedirof(search)

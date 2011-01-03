@@ -1,0 +1,44 @@
+Index: pypy-1.4/pypy/translator/platform/linux.py
+===================================================================
+--- pypy-1.4.orig/pypy/translator/platform/linux.py
++++ pypy-1.4/pypy/translator/platform/linux.py
+@@ -3,17 +3,22 @@ import py, os
+ from pypy.translator.platform import _run_subprocess
+ from pypy.translator.platform.posix import BasePosix
+ 
++CFLAGS = ['-O3', '-pthread', '-fomit-frame-pointer',
++          '-Wall', '-Wno-unused']
++if os.environ.get('CFLAGS', None):
++    CFLAGS.extend(os.environ['CFLAGS'].split())
++CFLAGS = tuple(CFLAGS)
++
+ class BaseLinux(BasePosix):
+     name = "linux"
+     
+     link_flags = ('-pthread', '-lrt')
+-    cflags = ('-O3', '-pthread', '-fomit-frame-pointer',
+-              '-Wall', '-Wno-unused')
++    cflags = CFLAGS
+     standalone_only = ()
+     shared_only = ('-fPIC',)
+     so_ext = 'so'
+     so_prefixes = ('lib', '')
+-    
++
+     def _args_for_shared(self, args):
+         return ['-shared'] + args
+ 
+@@ -29,9 +34,10 @@ class BaseLinux(BasePosix):
+ class Linux(BaseLinux):
+     shared_only = ()    # it seems that on 32-bit linux, compiling with -fPIC
+                         # gives assembler that asmgcc is not happy about.
+-    def library_dirs_for_libffi_a(self):
+-        # places where we need to look for libffi.a
+-        return self.library_dirs_for_libffi() + ['/usr/lib']
++    # Fedora Linux, at least, has the shared version but not the static
++    #def library_dirs_for_libffi_a(self):
++    #    # places where we need to look for libffi.a
++    #    return self.library_dirs_for_libffi() + ['/usr/lib']
+ 
+ 
+ class Linux64(BaseLinux):
