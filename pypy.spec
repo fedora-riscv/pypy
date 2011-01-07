@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.4.1
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -176,7 +176,9 @@ BuildRequires:  bzip2-devel
 BuildRequires:  ncurses-devel
 BuildRequires:  expat-devel
 BuildRequires:  openssl-devel
+%ifarch %{ix86} x86_64 ppc ppc64 s390x
 BuildRequires:  valgrind-devel
+%endif
 
 # Used by the selftests, though not by the build:
 BuildRequires:  gc-devel
@@ -763,6 +765,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Fri Jan  7 2011 Dan Horák <dan[at]danny.cz> - 1.4.1-5
+- valgrind available only on selected architectures
+
 * Wed Jan  5 2011 David Malcolm <dmalcolm@redhat.com> - 1.4.1-4
 - rebuild pypy using itself, for speed, with a boolean to break this cycle in
 the build-requirement graph (falling back to using "python-devel" aka CPython)
