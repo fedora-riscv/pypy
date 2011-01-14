@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.4.1
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -204,6 +204,16 @@ Group:    Development/Languages
 Summary:  Run-time libraries used by PyPy implementations of Python
 %description libs
 Libraries required by the various PyPy implementations of Python.
+
+
+%package devel
+Group:    Development/Languages
+Summary:  Development tools for working with PyPy
+%description devel
+Header files for building C extension modules against PyPy
+
+Requires: pypy = %{version}-%{release}
+
 
 %if 0%{with_stackless}
 %package stackless
@@ -516,6 +526,22 @@ mkdir -p %{buildroot}/%{pypyprefix}/site-packages
   %{buildroot}/%{_bindir}/pypy \
   0
 
+
+# Header files for C extension modules.
+# Upstream's packaging process (pypy/tool/release/package.py)
+# creates an "include" subdir and copies all *.h/*.inl from "include" there
+# (it also has an apparently out-of-date comment about copying them from
+# pypy/_interfaces, but this directory doesn't seem to exist, and it doesn't
+# seem to do this as of 2011-01-13)
+
+# FIXME: arguably these should be instead put into a subdir below /usr/include,
+# it's not yet clear to me how upstream plan to deal with the C extension
+# interface going forward, so let's just mimic upstream for now.
+%global pypy_include_dir  %{pypyprefix}/include
+mkdir -p %{buildroot}/%{pypy_include_dir}
+cp include/*.h include/*.inl %{buildroot}/%{pypy_include_dir}
+
+
 # Capture the RPython source code files from the build within the debuginfo
 # package (rhbz#666975)
 %global pypy_debuginfo_dir /usr/src/debug/pypy-%{version}-src
@@ -692,8 +718,9 @@ CheckPyPy() {
     SkipTest test_tarfile  # permissions issues
     %endif
 
-    # Run the built binary through the selftests:
-    time ./$ExeName -m test.regrtest -x $TESTS_TO_SKIP
+    # Run the built binary through the selftests
+    # "-w" : re-run failed tests in verbose mode
+    time ./$ExeName -m test.regrtest -w -x $TESTS_TO_SKIP
 
     popd
 
@@ -756,6 +783,12 @@ rm -rf $RPM_BUILD_ROOT
 %{_bindir}/pypy
 %endif
 
+%files devel
+%defattr(-,root,root,-)
+%dir %{pypy_include_dir}
+%{pypy_include_dir}/*.h
+%{pypy_include_dir}/*.inl
+
 %if 0%{with_stackless}
 %files stackless
 %defattr(-,root,root,-)
@@ -765,6 +798,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Jan 13 2011 David Malcolm <dmalcolm@redhat.com> - 1.4.1-6
+- add a "pypy-devel" subpackage, and install the header files there
+- in %%check, re-run failed tests in verbose mode
+
 * Fri Jan  7 2011 Dan Horák <dan[at]danny.cz> - 1.4.1-5
 - valgrind available only on selected architectures
 
