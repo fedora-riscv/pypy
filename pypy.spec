@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.4.1
-Release:        7%{?dist}
+Release:        8%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -152,8 +152,38 @@ Patch4: pypy-1.4.1-more-readable-c-code.patch
 #
 # Turn it off with this boolean, to revert back to rebuilding using CPython
 # and avoid a cycle in the build-time dependency graph:
+
+# I'm disabling the self-hosting for now, due to a fatal error seen inside the
+# JIT, presumably whilst JIT-compiling something within the translator's
+# inliner.
+# 
+# Specifically, building pypy-1.4.1-7.fc15.src.rpm on x86_64 using pypy-1.4.1-5.fc15.x86_64 
+#   http://koji.fedoraproject.org/koji/taskinfo?taskID=2721517
+# failed with this RPython traceback:
+#     ... snip ...
+#   [rtyper:WARNING] prebuilt instance <pypy.rpython.memory.gctransform.asmgcroot.ShapeDecompressor instance at 0x00000000f0b5bc80> has no attribute 'addr'
+#   [rtyper] specializing: 179300 / 180508 blocks   (99%)
+#   [rtyper] specializing: 180500 / 180566 blocks   (99%)
+#   [rtyper] -=- specialized 1363 more blocks -=-
+#   [rtyper] specializing: 180600 / 180777 blocks   (99%)
+#   [rtyper] -=- specialized 211 more blocks -=-
+#   [backendopt:inlining] phase with threshold factor: 32.4
+#   [backendopt:inlining] heuristic: pypy.translator.backendopt.inline.inlining_heuristic
+#   [x86/regalloc] Bogus arg in operation 76 at 0
+#   RPython traceback:
+#     File "implement_62.c", line 39979, in send_bridge_to_backend
+#     File "implement_69.c", line 65301, in Assembler386_assemble_bridge
+#     File "implement_72.c", line 8078, in RegAlloc_prepare_bridge
+#     File "implement_40.c", line 53061, in RegAlloc__prepare
+#     File "implement_44.c", line 14305, in RegAlloc__compute_vars_longevity
+#   Fatal RPython error: NotImplementedError
 #
-%global use_self_when_building 1
+# This appears to be deep within pypy/jit/backend/x86/regalloc.py which has
+# called "not_implemented" to emit this message to stderr, before raising the
+# exception:
+#   [x86/regalloc] Bogus arg in operation 76 at 0
+
+%global use_self_when_building 0
 %if 0%{use_self_when_building}
 BuildRequires: pypy
 %global bootstrap_python_interp pypy
@@ -817,6 +847,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Fri Jan 14 2011 David Malcolm <dmalcolm@redhat.com> - 1.4.1-8
+- disable self-hosting for now, due to fatal error seen JIT-compiling the
+translator
+
 * Fri Jan 14 2011 David Malcolm <dmalcolm@redhat.com> - 1.4.1-7
 - skip test_ioctl for now
 
