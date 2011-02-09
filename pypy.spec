@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.4.1
-Release:        8%{?dist}
+Release:        9%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -847,6 +847,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.4.1-9
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
+
 * Fri Jan 14 2011 David Malcolm <dmalcolm@redhat.com> - 1.4.1-8
 - disable self-hosting for now, due to fatal error seen JIT-compiling the
 translator
