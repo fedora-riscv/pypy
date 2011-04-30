@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.4.1
-Release:        9%{?dist}
+Release:        10%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -74,7 +74,10 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 #  [Timer] Total:                         --- 5215.3 s
 
 
-# Should we build a "pypy" binary? (with jit)
+# We will build a "pypy" binary.
+#
+# Unfortunately, the JIT support is only available on some architectures.
+#
 # pypy-1.4/pypy/jit/backend/detect_cpu.py:getcpuclassname currently supports the
 # following options:
 #  'i386', 'x86'
@@ -82,6 +85,11 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 #  'x86_64'
 #  'cli'
 #  'llvm'
+#
+# We will only build with JIT support on those architectures, and build without
+# it on the other archs.  The resulting binary will typically be slower than
+# CPython for the latter case.
+#
 %ifarch %{ix86} x86_64
 # FIXME: is there a better way of expressing "intel" here?
 %global with_jit 1
@@ -225,8 +233,16 @@ BuildRequires:  /usr/bin/execstack
 Requires: pypy-libs = %{version}-%{release}
 
 %description
-PyPy's implementation of Python, featuring a Just-In-Time compiler, and various
-optimized implementations of the standard types (strings, dictionaries, etc)
+PyPy's implementation of Python, featuring a Just-In-Time compiler on some CPU
+architectures, and various optimized implementations of the standard types
+(strings, dictionaries, etc)
+
+%if 0%{with_jit}
+This build of PyPy has JIT-compilation enabled.
+%else
+This build of PyPy has JIT-compilation disabled, as it is not supported on this
+CPU architecture.
+%endif
 
 
 %package libs
@@ -411,11 +427,12 @@ BuildPyPy() {
   popd
 }
 
-%if 0%{with_jit}
 BuildPyPy \
   pypy \
-  "-Ojit"
+%if 0%{with_jit}
+  "-Ojit" \
 %endif
+  %{nil}
 
 %if 0%{with_stackless}
 BuildPyPy \
@@ -448,9 +465,7 @@ InstallPyPy() {
 
 mkdir -p %{buildroot}/%{_bindir}
 
-%if 0%{with_jit}
 InstallPyPy pypy
-%endif
 
 %if 0%{with_stackless}
 InstallPyPy pypy-stackless
@@ -799,9 +814,7 @@ CheckPyPy() {
     echo "--------------------------------------------------------------"
 }
 
-%if 0%{with_jit}
 CheckPyPy pypy
-%endif
 
 %if 0%{with_stackless}
 CheckPyPy pypy-stackless
@@ -825,12 +838,10 @@ rm -rf $RPM_BUILD_ROOT
 %{pypyprefix}/lib_pypy/
 %{pypyprefix}/site-packages/
 
-%if 0%{with_jit}
 %files
 %defattr(-,root,root,-)
 %doc LICENSE README
 %{_bindir}/pypy
-%endif
 
 %files devel
 %defattr(-,root,root,-)
@@ -847,6 +858,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed Apr 20 2011 David Malcolm <dmalcolm@redhat.com> - 1.4.1-10
+- build a /usr/bin/pypy (but without the JIT compiler) on architectures that
+don't support the JIT, so that they do at least have something that runs
+
 * Tue Feb 08 2011 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.4.1-9
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_15_Mass_Rebuild
 
