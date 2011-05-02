@@ -1,9 +1,10 @@
-Index: pypy-1.4/pypy/translator/platform/linux.py
-===================================================================
---- pypy-1.4.orig/pypy/translator/platform/linux.py
-+++ pypy-1.4/pypy/translator/platform/linux.py
-@@ -3,17 +3,22 @@ import py, os
- from pypy.translator.platform import _run_subprocess
+diff -up pypy-1.5-src/pypy/translator/platform/linux.py.configure-fedora pypy-1.5-src/pypy/translator/platform/linux.py
+--- pypy-1.5-src/pypy/translator/platform/linux.py.configure-fedora	2011-04-30 10:18:50.000000000 -0400
++++ pypy-1.5-src/pypy/translator/platform/linux.py	2011-04-30 18:59:24.041160978 -0400
+@@ -1,13 +1,18 @@
+ """Support for Linux."""
+-
++import os
  from pypy.translator.platform.posix import BasePosix
  
 +CFLAGS = ['-O3', '-pthread', '-fomit-frame-pointer',
@@ -22,16 +23,10 @@ Index: pypy-1.4/pypy/translator/platform/linux.py
      standalone_only = ()
      shared_only = ('-fPIC',)
      so_ext = 'so'
-     so_prefixes = ('lib', '')
--    
-+
-     def _args_for_shared(self, args):
-         return ['-shared'] + args
- 
-@@ -29,9 +34,10 @@ class BaseLinux(BasePosix):
- class Linux(BaseLinux):
+@@ -29,9 +34,10 @@ class Linux(BaseLinux):
      shared_only = ()    # it seems that on 32-bit linux, compiling with -fPIC
                          # gives assembler that asmgcc is not happy about.
+ 
 -    def library_dirs_for_libffi_a(self):
 -        # places where we need to look for libffi.a
 -        return self.library_dirs_for_libffi() + ['/usr/lib']
