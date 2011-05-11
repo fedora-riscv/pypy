@@ -431,6 +431,8 @@ BuildPyPy \
   pypy \
 %if 0%{with_jit}
   "-Ojit" \
+%else
+  "-O2" \
 %endif
   %{nil}
 
