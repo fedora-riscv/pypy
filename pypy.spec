@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.5
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -223,6 +223,9 @@ BuildRequires:  gc-devel
 
 BuildRequires:  /usr/bin/execstack
 
+# For byte-compiling the JIT-viewing mode:
+BuildRequires:  emacs
+
 # pypy is bundling these so we delete them in %%prep.  I don't think they are
 # needed unless we build pypy targetted at running on the jvm.
 #BuildRequires:  jna
@@ -248,6 +251,11 @@ CPU architecture.
 %package libs
 Group:    Development/Languages
 Summary:  Run-time libraries used by PyPy implementations of Python
+
+# We supply an emacs mode for the JIT viewer.
+# (This doesn't bring in all of emacs, just the directory structure)
+Requires: emacs-filesystem >= %{_emacs_version}
+
 %description libs
 Libraries required by the various PyPy implementations of Python.
 
@@ -442,6 +450,8 @@ BuildPyPy \
    "--stackless"
 %endif
 
+%{_emacs_bytecompile} pypy/jit/tool/pypytrace-mode.el
+
 %install
 rm -rf $RPM_BUILD_ROOT
 
@@ -616,6 +626,10 @@ find \
 #   dangling-symlink
 # but given that the objective is to preserve a copy of the source code, those
 # are acceptable.
+
+# Install the JIT trace mode for Emacs:
+mkdir -p %{buildroot}/%{_emacs_sitelispdir}
+cp -a pypy/jit/tool/pypytrace-mode.el* %{buildroot}/%{_emacs_sitelispdir}
 
 %check
 topdir=$(pwd)
@@ -1135,6 +1149,8 @@ rm -rf $RPM_BUILD_ROOT
 %{pypyprefix}/lib-python/conftest.py*
 %{pypyprefix}/lib_pypy/
 %{pypyprefix}/site-packages/
+%{_emacs_sitelispdir}/pypytrace-mode.el
+%{_emacs_sitelispdir}/pypytrace-mode.elc
 
 %files
 %defattr(-,root,root,-)
@@ -1155,6 +1171,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Aug  2 2011 David Malcolm <dmalcolm@redhat.com> - 1.5-2
+- add pypytrace-mode.el to the pypy-libs subpackage, for viewing JIT trace
+logs in emacs
+
 * Mon May  2 2011 David Malcolm <dmalcolm@redhat.com> - 1.5-1
 - 1.5
 
