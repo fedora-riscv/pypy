@@ -1,6 +1,6 @@
 Name:           pypy
-Version:        1.5
-Release:        2%{?dist}
+Version:        1.6
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -104,6 +104,9 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # Easy way to enable/disable verbose logging:
 %global verbose_logs 0
 
+# Easy way to turn off the selftests:
+%global run_selftests 1
+
 %global pypyprefix %{_libdir}/pypy-%{version}
 %global pylibver 2.7
 
@@ -117,7 +120,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0:        http://pypy.org/download/pypy-%{version}-src.tar.bz2
+Source0:        https://bitbucket.org/pypy/pypy/get/release-1.6.tar.bz2
 
 # Edit a translator file for linux in order to configure our cflags and dynamic libffi
 Patch0:         pypy-1.5-config.patch
@@ -218,8 +221,16 @@ BuildRequires:  openssl-devel
 BuildRequires:  valgrind-devel
 %endif
 
+%if %{run_selftests}
 # Used by the selftests, though not by the build:
 BuildRequires:  gc-devel
+
+# For use in the selftests, for recording stats:
+BuildRequires:  time
+
+# For use in the selftests, for imposing a per-test timeout:
+BuildRequires:  perl
+%endif
 
 BuildRequires:  /usr/bin/execstack
 
@@ -289,7 +300,7 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%setup -q -n pypy-%{version}-src
+%setup -q -n pypy-pypy-release-%{version}
 %patch0 -p1 -b .configure-fedora
 %patch1 -p1 -b .suppress-mandelbrot-set-during-tty-build
 
@@ -656,445 +667,47 @@ CheckPyPy() {
 
     pushd %{goal_dir}
 
-    # Gather a list of tests to skip, due to known failures
-    # TODO: report these failures to pypy upstream
-    # See also rhbz#666967 and rhbz#666969
-    TESTS_TO_SKIP=""
+    # I'm seeing numerous cases where tests seem to hang, or fail unpredictably
+    # So we'll run each test in its own process, with a timeout
 
-    # Test failures relating to missing codecs
-    # Hopefully when pypy merges to 2.7 support we'll gain these via a
-    # refreshed stdlib:
-      # test_codecencodings_cn:
-      #   all tests fail, with one of
-      #     unknown encoding: gb18030
-      #     unknown encoding: gb2312
-      #     unknown encoding: gbk
-      SkipTest test_codecencodings_cn
+    # Use regrtest to explicitly list all tests:
+    ( ./$ExeName -c \
+         "from test.regrtest import findtests; print '\n'.join(findtests())"
+    ) > testnames.txt
 
-      # test_codecencodings_hk:
-      #   all tests fail, with:
-      #     unknown encoding: big5hkscs
-      SkipTest test_codecencodings_hk
+    echo "== Test names =="
+    cat testnames.txt
+    echo "================="
 
-      # test_codecencodings_jp:
-      #   all tests fail, with one of:
-      #     unknown encoding: cp932
-      #     unknown encoding: euc_jisx0213
-      #     unknown encoding: euc_jp
-      #     unknown encoding: shift_jis
-      #     unknown encoding: shift_jisx0213
-      SkipTest test_codecencodings_jp
+    echo "" > failed-tests.txt
 
-      # test_codecencodings_kr:
-      #   all tests fail, with one of:
-      #     unknown encoding: cp949
-      #     unknown encoding: euc_kr
-      #     unknown encoding: johab
-      SkipTest test_codecencodings_kr
+    for TestName in $(cat testnames.txt) ; do
 
-      # test_codecencodings_tw:
-      #    all tests fail, with:
-      #      unknown encoding: big5
-      SkipTest test_codecencodings_tw
+        echo "===================" $TestName "===================="
 
-      # test_multibytecodec:
-      #   14 failures out of 15, due to:
-      #     unknown encoding: euc-kr
-      #     unknown encoding: gb2312
-      #     unknown encoding: jisx0213
-      #     unknown encoding: cp949
-      #     unknown encoding: iso2022-jp
-      #     unknown encoding: gb18030
-      SkipTest test_multibytecodec
+        # Use /usr/bin/time (rather than the shell "time" builtin) to gather
+        # info on the process (time/CPU/memory).  This passes on the exit
+        # status of the underlying command
+        #
+        # Use perl's alarm command to impose a timeout
+        #   900 seconds is 15 minutes per test.
+        # If a test hangs, that test should get terminated, allowing the build
+        # to continue.
+        #
+        # Invoke pypy on test.regrtest to run the specific test suite
+        # verbosely
+        #
+        # For now, || true, so that any failures don't halt the build:
+        ( /usr/bin/time \
+           perl -e 'alarm shift @ARGV; exec @ARGV' 900 \
+             ./$ExeName -m test.regrtest -v $TestName ) \
+        || (echo $TestName >> failed-tests.txt) \
+        || true
+    done
 
-    #
-    # Other failures:
-    #
-      # test_asynchat:
-      #   seems to hang on this test, within test_line_terminator
-      SkipTest test_asynchat
-
-      # test_audioop:
-      #     test test_audioop crashed -- <type 'exceptions.ImportError'>: No module named audioop
-      #     Traceback (most recent call last):
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/test/regrtest.py", line 874, in runtest_inner
-      #         the_package = __import__(abstest, globals(), locals(), [])
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/2.7/test/test_audioop.py", line 1, in <module>
-      #         import audioop
-      #     ImportError: No module named audioop
-      SkipTest test_audioop
-
-      # test_capi:
-      #   RPython traceback:
-      #     RPython traceback:
-      #       File "implement.c", line 243013, in _PyObject_New
-      #       File "implement_1.c", line 31707, in _PyObject_NewVar
-      #       File "implement.c", line 217060, in from_ref
-      #     Fatal RPython error: AssertionError
-      SkipTest test_capi
-
-      # test_compiler:
-      #   4 errors out of 13:
-      #     testSourceCodeEncodingsError
-      #     testWith
-      #     testWithAss
-      #     testYieldExpr
-      SkipTest test_compiler
-
-      # test_ctypes:
-      #   failures=17, errors=20, out of 132 tests
-      SkipTest test_ctypes
-
-      # test_distutils:
-      #     Warning -- os.environ was modified by test_distutils
-      #     test test_distutils failed -- multiple errors occurred; run in verbose mode for details
-      SkipTest test_distutils
-
-      # test_frozen:
-      #   TestFailed: import __hello__ failed:No module named __hello__
-      SkipTest test_frozen
-
-      # test_gc:
-      #     test test_gc crashed -- <type 'exceptions.AttributeError'>: 'module' object has no attribute 'get_debug'
-      SkipTest test_gc
-
-      # test_gdb:
-      #     test test_gdb crashed -- <type 'exceptions.KeyError'>: 'PY_CFLAGS'
-      SkipTest test_gdb
-
-      # test_generators:
-      #     **********************************************************************
-      #     File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/test/test_generators.py", line ?, in test.test_generators.__test__.coroutine
-      #     Failed example:
-      #         del g; gc_collect()
-      #     Expected:
-      #         exiting
-      #     Got nothing
-      #     **********************************************************************
-      #     File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/test/test_generators.py", line ?, in test.test_generators.__test__.coroutine
-      #     Failed example:
-      #         del g; gc_collect()
-      #     Expected:
-      #         exiting
-      #     Got nothing
-      #     **********************************************************************
-      #     File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/test/test_generators.py", line ?, in test.test_generators.__test__.coroutine
-      #     Failed example:
-      #         del g; gc_collect()
-      #     Expected:
-      #         finally
-      #     Got nothing
-      #     **********************************************************************
-      #     File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/test/test_generators.py", line ?, in test.test_generators.__test__.coroutine
-      #     Failed example:
-      #         sys.stderr.getvalue().startswith(
-      #             "Exception RuntimeError: 'generator ignored GeneratorExit' in "
-      #         )
-      #     Expected:
-      #         True
-      #     Got:
-      #         False
-      #     **********************************************************************
-      #     File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/test/test_generators.py", line ?, in test.test_generators.__test__.refleaks
-      #     Failed example:
-      #         try:
-      #             sys.stderr = StringIO.StringIO()
-      #             class Leaker:
-      #                 def __del__(self):
-      #                     raise RuntimeError
-      #             l = Leaker()
-      #             del l
-      #             gc_collect()
-      #             err = sys.stderr.getvalue().strip()
-      #             err.startswith(
-      #                 "Exception RuntimeError: RuntimeError() in "
-      #             )
-      #             err.endswith("> ignored")
-      #             len(err.splitlines())
-      #         finally:
-      #             sys.stderr = old
-      #     Expected:
-      #         True
-      #         True
-      #         1
-      #     Got:
-      #         False
-      #         False
-      #         0
-      #     **********************************************************************
-      #     2 items had failures:
-      #        4 of 107 in test.test_generators.__test__.coroutine
-      #        1 of  11 in test.test_generators.__test__.refleaks
-      #     ***Test Failed*** 5 failures.
-      #     test test_generators failed -- 5 of 294 doctests failed
-      SkipTest test_generators
-
-      # test_getargs2:
-      #     test test_getargs2 failed -- multiple errors occurred; run in verbose mode for details
-      SkipTest test_getargs2
-
-      # test_hotshot:
-      #     test test_hotshot crashed -- <type 'exceptions.ImportError'>: No module named _hotshot
-      SkipTest test_hotshot
-
-      # test_io:
-      #     test test_io failed -- multiple errors occurred; run in verbose mode for details
-      SkipTest test_io
-
-      # test_ioctl:
-      #   Failing in Koji with dist-f15 with:
-      #     ======================================================================
-      #     FAIL: test_ioctl (test.test_ioctl.IoctlTests)
-      #     ----------------------------------------------------------------------
-      #     Traceback (most recent call last):
-      #       File "/usr/lib/pypy-1.4.1/lib-python/2.5.2/test/test_ioctl.py", line 25, in test_ioctl
-      #         self.assert_(rpgrp in ids, "%s not in %s" % (rpgrp, ids))
-      #     AssertionError: 0 not in (8304, 17737)
-      #     ======================================================================
-      #     FAIL: test_ioctl_mutate (test.test_ioctl.IoctlTests)
-      #     ----------------------------------------------------------------------
-      #     Traceback (most recent call last):
-      #       File "/usr/lib/pypy-1.4.1/lib-python/2.5.2/test/test_ioctl.py", line 35, in test_ioctl_mutate
-      #         self.assert_(rpgrp in ids, "%s not in %s" % (rpgrp, ids))
-      #     AssertionError: 0 not in (8304, 17737)
-      #     ----------------------------------------------------------------------
-      SkipTest test_ioctl
-
-      # test_iterlen:
-      #   24 failures out of 25, apparently all due to TypeError
-      SkipTest test_iterlen
-
-      # test_multiprocessing:
-      #     test test_multiprocessing failed -- multiple errors occurred; run in verbose mode for details
-      SkipTest test_multiprocessing
-
-      # test_module:
-      #     test test_module failed -- Traceback (most recent call last):
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/test/test_module.py", line 81, in test_clear_dict_in_ref_cycle
-      #         self.assertEqual(destroyed, [1])
-      #     AssertionError: Lists differ: [] != [1]
-      #     Second list contains 1 additional elements.
-      #     First extra element 0:
-      #     1
-      #     - []
-      #     + [1]
-      #     ?  +
-      SkipTest test_module
-
-      # test_parser:
-      #   12 failures out of 15
-      SkipTest test_parser
-
-      # test_platform:
-      #   Koji builds show:
-      #    test test_platform failed -- errors occurred in test.test_platform.PlatformTest
-      SkipTest test_platform
-
-      # test_posix:
-      #     test test_posix failed -- Traceback (most recent call last):
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/2.7/test/test_posix.py", line 361, in test_getcwd_long_pathnames
-      #         _create_and_do_getcwd(dirname)
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/2.7/test/test_posix.py", line 351, in _create_and_do_getcwd
-      #         _create_and_do_getcwd(dirname, current_path_length + len(dirname) + 1)
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/2.7/test/test_posix.py", line 351, in _create_and_do_getcwd
-      #         _create_and_do_getcwd(dirname, current_path_length + len(dirname) + 1)
-      #       [...repeats...]
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/2.7/test/test_posix.py", line 351, in _create_and_do_getcwd
-      #         _create_and_do_getcwd(dirname, current_path_length + len(dirname) + 1)
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/2.7/test/test_posix.py", line 356, in _create_and_do_getcwd
-      #         self.assertEqual(e.errno, expected_errno)
-      #     AssertionError: 36 != 34
-      SkipTest test_posix
-
-      # test_readline:
-      #     test test_readline failed -- Traceback (most recent call last):
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/2.7/test/test_readline.py", line 16, in testHistoryUpdates
-      #         readline.clear_history()
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib_pypy/pyrepl/readline.py", line 277, in clear_history
-      #         del self.get_reader().history[:]
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib_pypy/pyrepl/readline.py", line 186, in get_reader
-      #         console = UnixConsole(self.f_in, self.f_out, encoding=ENCODING)
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib_pypy/pyrepl/unix_console.py", line 103, in __init__
-      #         self._clear = _my_getstr("clear")
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib_pypy/pyrepl/unix_console.py", line 45, in _my_getstr
-      #         "terminal doesn't have the required '%s' capability"%cap
-      #     InvalidTerminal: terminal doesn't have the required 'clear' capability
-      SkipTest test_readline
-
-      # test_scope:
-      #     test test_scope failed -- Traceback (most recent call last):
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/test/test_scope.py", line 437, in testLeaks
-      #         self.assertEqual(Foo.count, 0)
-      #     AssertionError: 100 != 0
-      SkipTest test_scope
-
-      # test_socket:
-      #   testSockName can fail in Koji with:
-      #       my_ip_addr = socket.gethostbyname(socket.gethostname())
-      #     gaierror: (-3, 'Temporary failure in name resolution')
-      SkipTest test_socket
-
-      # test_sort:
-      #   some failures
-      SkipTest test_sort
-
-      # test_sqlite:
-      #   3 of the sqlite3.test.dbapi.ExtensionTests raise:
-      #     ProgrammingError: Incomplete statement ''
-      SkipTest test_sqlite
-
-      # test_strop:
-      #     test test_strop crashed -- <type 'exceptions.ImportError'>: No module named strop
-      SkipTest test_strop
-
-      # test_structmembers:
-      #     test test_structmembers failed -- multiple errors occurred; run in verbose mode for details
-      SkipTest test_structmembers
-
-      # test_subprocess:
-      #     debug: WARNING: library path not found, using compiled-in sys.path and sys.prefix will be unset
-      #     'import site' failed
-      #     .
-      #         this bit of output is from a test of stdout in a different process ...
-      #     /builddir/build/BUILD/pypy-1.5-src/lib_pypy/ctypes_support.py:26: RuntimeWarning: C function without declared arguments called
-      #       return standard_c_lib.__errno_location()
-      #     debug: WARNING: library path not found, using compiled-in sys.path and sys.prefix will be unset
-      #     'import site' failed
-      #     .
-      #         this bit of output is from a test of stdout in a different process ...
-      #     test test_subprocess failed -- multiple errors occurred; run in verbose mode for details
-      SkipTest test_subprocess
-
-      # test_symtable:
-      #     test test_symtable crashed -- <type 'exceptions.ImportError'>: No module named _symtable
-      SkipTest test_symtable
-
-      # test_sys_settrace:
-      #     test test_sys_settrace failed -- Traceback (most recent call last):
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/test/test_sys_settrace.py", line 334, in test_13_genexp
-      #         self.run_test(generator_example)
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/test/test_sys_settrace.py", line 280, in run_test
-      #         self.run_and_compare(func, func.events)
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/test/test_sys_settrace.py", line 277, in run_and_compare
-      #         tracer.events, events)
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/test/test_sys_settrace.py", line 269, in compare_events
-      #         [str(x) for x in events])))
-      #     AssertionError: events did not match expectation:
-      #       (0, 'call')
-      #       (2, 'line')
-      #       (-6, 'call')
-      #       (-5, 'line')
-      #       (-4, 'line')
-      #       (-4, 'return')
-      #     - (-4, 'call')
-      #     - (-4, 'exception')
-      #     - (-1, 'line')
-      #     - (-1, 'return')
-      #       (5, 'line')
-      #       (6, 'line')
-      #       (5, 'line')
-      #       (6, 'line')
-      #       (5, 'line')
-      #       (6, 'line')
-      #       (5, 'line')
-      #       (6, 'line')
-      #       (5, 'line')
-      #       (6, 'line')
-      #       (5, 'line')
-      #       (6, 'line')
-      #       (5, 'line')
-      #       (6, 'line')
-      #       (5, 'line')
-      #       (6, 'line')
-      #       (5, 'line')
-      #       (6, 'line')
-      #       (5, 'line')
-      #       (6, 'line')
-      #       (5, 'line')
-      #       (5, 'return')
-      SkipTest test_sys_settrace
-
-      # test_tempfile:
-      #     test test_tempfile failed -- multiple errors occurred; run in verbose mode for details
-      SkipTest test_tempfile
-
-      # test_thread
-      #   Koji build appears to hang here
-      SkipTest test_thread
-
-      # test_traceback:
-      #   works when run standalone; failures seen when run as part of a suite
-      SkipTest test_traceback
-
-      # test_uuid:
-      #     ======================================================================
-      #     ERROR: test_ifconfig_getnode (test.test_uuid.TestUUID)
-      #     ----------------------------------------------------------------------
-      #     Traceback (most recent call last):
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/2.7/test/test_uuid.py", line 306, in test_ifconfig_getnode
-      #         node = uuid._ifconfig_getnode()
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/2.7/uuid.py", line 326, in _ifconfig_getnode
-      #         ip_addr = socket.gethostbyname(socket.gethostname())
-      #     gaierror: [Errno -3] Temporary failure in name resolution
-      #     ----------------------------------------------------------------------
-      #     Ran 14 tests in 0.369s
-      #     FAILED (errors=1)
-      SkipTest test_uuid
-
-      # test_zipimport_support:
-      #     ======================================================================
-      #     ERROR: test_doctest_main_issue4197 (test.test_zipimport_support.ZipSupportTests)
-      #     ----------------------------------------------------------------------
-      #     Traceback (most recent call last):
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/2.7/test/test_zipimport_support.py", line 194, in test_doctest_main_issue4197
-      #         exit_code, data = run_python(script_name)
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/2.7/test/script_helper.py", line 80, in run_python
-      #         p = spawn_python(*args, **kwargs)
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/2.7/test/script_helper.py", line 66, in spawn_python
-      #         **kwargs)
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/subprocess.py", line 672, in __init__
-      #         errread, errwrite)
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/subprocess.py", line 1206, in _execute_child
-      #         raise child_exception
-      #     OSError: [Errno 13] Permission denied
-      #     ======================================================================
-      #     ERROR: test_pdb_issue4201 (test.test_zipimport_support.ZipSupportTests)
-      #     ----------------------------------------------------------------------
-      #     Traceback (most recent call last):
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/2.7/test/test_zipimport_support.py", line 221, in test_pdb_issue4201
-      #         p = spawn_python(script_name)
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/2.7/test/script_helper.py", line 66, in spawn_python
-      #         **kwargs)
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/subprocess.py", line 672, in __init__
-      #         errread, errwrite)
-      #       File "/builddir/build/BUILD/pypy-1.5-src/lib-python/modified-2.7/subprocess.py", line 1206, in _execute_child
-      #         raise child_exception
-      #     OSError: [Errno 13] Permission denied
-      #     ----------------------------------------------------------------------
-      #     Ran 4 tests in 0.726s
-      #     FAILED (errors=2)
-      SkipTest test_zipimport_support
-
-      # test_zlib:
-      #   failure seen in Koji, not sure of reason why:
-      #     test test_zlib failed -- Traceback (most recent call last):
-      #     File "/builddir/build/BUILD/pypy-1.4.1-src/lib-python/2.5.2/test/test_zlib.py", line 72, in test_baddecompressobj
-      #       self.assertRaises(ValueError, zlib.decompressobj, 0)
-      #     AssertionError: ValueError not raised
-      SkipTest test_zlib
-
-    %if 0%{use_self_when_building}
-    # Patch 3 prioritizes the installed copy of pypy's libraries over the
-    # build copy.
-    # This leads to test failures of test_pep263 and test_tarfile
-    # For now, suppress these when building using pypy itself:
-    SkipTest test_pep263   # on-disk encoding issues
-    SkipTest test_tarfile  # permissions issues
-    %endif
-
-    # Run the built binary through the selftests
-    # "-w" : re-run failed tests in verbose mode
-    time ./$ExeName -m test.regrtest -w -x $TESTS_TO_SKIP
+    echo "== Failed tests =="
+    cat failed-tests.txt
+    echo "================="
 
     popd
 
@@ -1124,12 +737,14 @@ CheckPyPy() {
     echo "--------------------------------------------------------------"
 }
 
+%if %{run_selftests}
 CheckPyPy pypy
 
 %if 0%{with_stackless}
 CheckPyPy pypy-stackless
 %endif
 
+%endif # run_selftests
 
 
 %clean
@@ -1142,7 +757,6 @@ rm -rf $RPM_BUILD_ROOT
 
 %dir %{pypyprefix}
 %dir %{pypyprefix}/lib-python
-%{pypyprefix}/lib-python/TODO
 %{pypyprefix}/lib-python/stdlib-version.txt
 %{pypyprefix}/lib-python/%{pylibver}/
 %{pypyprefix}/lib-python/modified-%{pylibver}/
@@ -1171,6 +785,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Aug 18 2011 David Malcolm <dmalcolm@redhat.com> - 1.6-1
+- 1.6
+- rewrite the %%check section, introducing per-test timeouts
+
 * Tue Aug  2 2011 David Malcolm <dmalcolm@redhat.com> - 1.5-2
 - add pypytrace-mode.el to the pypy-libs subpackage, for viewing JIT trace
 logs in emacs
