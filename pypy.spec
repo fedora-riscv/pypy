@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.6
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -155,6 +155,16 @@ Patch3: pypy-1.4.1-add-LIBRARY_INSTALLATION_PATH.patch
 # support (rhbz#666963)
 Patch4: pypy-1.5-more-readable-c-code.patch
 
+# In my koji builds, /root/bin is in the PATH for some reason
+# This leads to test_subprocess.py failing, due to "test_leaking_fds_on_error"
+# trying every dir in PATH for "nonexisting_i_hope", which leads to it raising
+#  OSError: [Errno 13] Permission denied
+# when it tries to read /root/bin, rather than raising "No such file"
+#
+# Work around this by specifying an absolute path for the non-existant
+# executable
+# Not yet sent upstream
+Patch5: pypy-1.6-fix-test-subprocess-with-nonreadable-path-dir.patch
 
 # Build-time requirements:
 
@@ -318,6 +328,7 @@ sed -i \
 
 %patch4 -p1 -b .more-readable-c-code
 
+%patch5 -p1
 
 # Replace /usr/local/bin/python shebangs with /usr/bin/python:
 find -name "*.py" -exec \
@@ -785,6 +796,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Sat Aug 20 2011 David Malcolm <dmalcolm@redhat.com> - 1.6-2
+- work around test_subprocess failure seen in koji (patch 5)
+
 * Thu Aug 18 2011 David Malcolm <dmalcolm@redhat.com> - 1.6-1
 - 1.6
 - rewrite the %%check section, introducing per-test timeouts
