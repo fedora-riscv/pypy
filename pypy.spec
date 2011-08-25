@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.6
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -666,7 +666,7 @@ topdir=$(pwd)
 
 SkipTest() {
     TEST_NAME=$1
-    sed -i -e"s|$TEST_NAME||" testnames.txt
+    sed -i -e"s|^$TEST_NAME$||g" testnames.txt
 }
 
 CheckPyPy() {
@@ -817,6 +817,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Aug 25 2011 David Malcolm <dmalcolm@redhat.com> - 1.6-4
+- fix SkipTest function to avoid corrupting the name of "test_gdbm"
+
 * Thu Aug 25 2011 David Malcolm <dmalcolm@redhat.com> - 1.6-3
 - add rpm macros file to the devel subpackage (source 2)
 - skip some tests that can't pass yet
