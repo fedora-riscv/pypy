@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.6
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -121,6 +121,10 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 # Source and patches:
 Source0:        https://bitbucket.org/pypy/pypy/get/release-1.6.tar.bz2
+
+# Supply various useful RPM macros for building python modules against pypy:
+#  __pypy, pypy_sitelib, pypy_sitearch
+Source2:        macros.pypy
 
 # Edit a translator file for linux in order to configure our cflags and dynamic libffi
 Patch0:         pypy-1.5-config.patch
@@ -653,13 +657,16 @@ find \
 mkdir -p %{buildroot}/%{_emacs_sitelispdir}
 cp -a pypy/jit/tool/pypytrace-mode.el* %{buildroot}/%{_emacs_sitelispdir}
 
+# Install macros for rpm:
+mkdir -p %{buildroot}/%{_sysconfdir}/rpm
+install -m 644 %{SOURCE2} %{buildroot}/%{_sysconfdir}/rpm
+
 %check
 topdir=$(pwd)
 
 SkipTest() {
-    # Append the given test name to TESTS_TO_SKIP
     TEST_NAME=$1
-    TESTS_TO_SKIP="$TESTS_TO_SKIP $TEST_NAME"
+    sed -i -e"s|$TEST_NAME||" testnames.txt
 }
 
 CheckPyPy() {
@@ -685,6 +692,19 @@ CheckPyPy() {
     ( ./$ExeName -c \
          "from test.regrtest import findtests; print '\n'.join(findtests())"
     ) > testnames.txt
+
+    # Skip some tests:
+      # "audioop" doesn't exist for pypy yet:
+      SkipTest test_audioop
+
+      # The gdb CPython hooks haven't been ported to cpyext:
+      SkipTest test_gdb
+
+      # hotshot relies heavily on _hotshot, which doesn't exist:
+      SkipTest test_hotshot
+
+      # "strop" module doesn't exist for pypy yet:
+      SkipTest test_strop
 
     echo "== Test names =="
     cat testnames.txt
@@ -786,6 +806,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %dir %{pypy_include_dir}
 %{pypy_include_dir}/*.h
+%config(noreplace) %{_sysconfdir}/rpm/macros.pypy
 
 %if 0%{with_stackless}
 %files stackless
@@ -796,6 +817,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Aug 25 2011 David Malcolm <dmalcolm@redhat.com> - 1.6-3
+- add rpm macros file to the devel subpackage (source 2)
+- skip some tests that can't pass yet
+
 * Sat Aug 20 2011 David Malcolm <dmalcolm@redhat.com> - 1.6-2
 - work around test_subprocess failure seen in koji (patch 5)
 
