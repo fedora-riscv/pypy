@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.6
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -213,10 +213,18 @@ Patch5: pypy-1.6-fix-test-subprocess-with-nonreadable-path-dir.patch
 BuildRequires: pypy
 %global bootstrap_python_interp pypy
 %else
+
+# Python 2.6 or later is needed, so on RHEL5 (2.4) we need to use the alternate
+# python26 rpm:
+%if 0%{?rhel} == 5
+BuildRequires: python26-devel
+%global bootstrap_python_interp python26
+%else
 BuildRequires: python-devel
 %global bootstrap_python_interp python
 %endif
 
+%endif
 
 
 # FIXME: I'm seeing errors like this in the logs:
@@ -817,6 +825,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Sep 12 2011 David Malcolm <dmalcolm@redhat.com> - 1.6-5
+- build using python26 on el5 (2.4 is too early)
+
 * Thu Aug 25 2011 David Malcolm <dmalcolm@redhat.com> - 1.6-4
 - fix SkipTest function to avoid corrupting the name of "test_gdbm"
 
