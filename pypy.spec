@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.6
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -100,6 +100,12 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # Should we build a "pypy-stackless" binary?
 %global with_stackless 0
 
+# Should we build the emacs JIT-viewing mode?
+%if 0%{?rhel} == 5 || 0%{?rhel} == 6
+%global with_emacs 0
+%else
+%global with_emacs 1
+%endif
 
 # Easy way to enable/disable verbose logging:
 %global verbose_logs 0
@@ -257,7 +263,9 @@ BuildRequires:  perl
 BuildRequires:  /usr/bin/execstack
 
 # For byte-compiling the JIT-viewing mode:
+%if %{with_emacs}
 BuildRequires:  emacs
+%endif
 
 # pypy is bundling these so we delete them in %%prep.  I don't think they are
 # needed unless we build pypy targetted at running on the jvm.
@@ -287,7 +295,9 @@ Summary:  Run-time libraries used by PyPy implementations of Python
 
 # We supply an emacs mode for the JIT viewer.
 # (This doesn't bring in all of emacs, just the directory structure)
+%if %{with_emacs}
 Requires: emacs-filesystem >= %{_emacs_version}
+%endif
 
 %description libs
 Libraries required by the various PyPy implementations of Python.
@@ -484,7 +494,9 @@ BuildPyPy \
    "--stackless"
 %endif
 
+%if %{with_emacs}
 %{_emacs_bytecompile} pypy/jit/tool/pypytrace-mode.el
+%endif
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -662,8 +674,10 @@ find \
 # are acceptable.
 
 # Install the JIT trace mode for Emacs:
+%if %{with_emacs}
 mkdir -p %{buildroot}/%{_emacs_sitelispdir}
 cp -a pypy/jit/tool/pypytrace-mode.el* %{buildroot}/%{_emacs_sitelispdir}
+%endif
 
 # Install macros for rpm:
 mkdir -p %{buildroot}/%{_sysconfdir}/rpm
@@ -802,8 +816,10 @@ rm -rf $RPM_BUILD_ROOT
 %{pypyprefix}/lib-python/conftest.py*
 %{pypyprefix}/lib_pypy/
 %{pypyprefix}/site-packages/
+%if %{with_emacs}
 %{_emacs_sitelispdir}/pypytrace-mode.el
 %{_emacs_sitelispdir}/pypytrace-mode.elc
+%endif
 
 %files
 %defattr(-,root,root,-)
@@ -825,6 +841,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Sep 13 2011 David Malcolm <dmalcolm@redhat.com> - 1.6-6
+- don't ship the emacs JIT-viewer on el5 and el6 (missing emacs-filesystem;
+missing _emacs_bytecompile macro on el5)
+
 * Mon Sep 12 2011 David Malcolm <dmalcolm@redhat.com> - 1.6-5
 - build using python26 on el5 (2.4 is too early)
 
