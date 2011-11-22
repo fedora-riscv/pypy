@@ -1,15 +1,15 @@
-diff -up pypy-1.5-src/pypy/interpreter/pycode.py.more-readable-c-code pypy-1.5-src/pypy/interpreter/pycode.py
---- pypy-1.5-src/pypy/interpreter/pycode.py.more-readable-c-code	2011-04-30 10:18:50.000000000 -0400
-+++ pypy-1.5-src/pypy/interpreter/pycode.py	2011-05-02 14:28:33.942161002 -0400
+diff -up pypy-pypy-release-1.7/pypy/interpreter/pycode.py.more-readable-c-code pypy-pypy-release-1.7/pypy/interpreter/pycode.py
+--- pypy-pypy-release-1.7/pypy/interpreter/pycode.py.more-readable-c-code	2011-11-19 02:44:54.000000000 -0500
++++ pypy-pypy-release-1.7/pypy/interpreter/pycode.py	2011-11-21 16:16:15.673463780 -0500
 @@ -13,6 +13,7 @@ from pypy.interpreter.gateway import Non
- from pypy.interpreter.astcompiler.consts import (CO_OPTIMIZED,
+ from pypy.interpreter.astcompiler.consts import (
      CO_OPTIMIZED, CO_NEWLOCALS, CO_VARARGS, CO_VARKEYWORDS, CO_NESTED,
      CO_GENERATOR, CO_CONTAINSGLOBALS)
 +from pypy.interpreter.pytraceback import offset2lineno
  from pypy.rlib.rarithmetic import intmask
  from pypy.rlib.debug import make_sure_not_resized
  from pypy.rlib import jit
-@@ -80,6 +81,7 @@ class PyCode(eval.Code):
+@@ -81,6 +82,7 @@ class PyCode(eval.Code):
          self.hidden_applevel = hidden_applevel
          self.magic = magic
          self._signature = cpython_code_signature(self)
@@ -17,7 +17,7 @@ diff -up pypy-1.5-src/pypy/interpreter/pycode.py.more-readable-c-code pypy-1.5-s
          self._initialize()
  
      def _initialize(self):
-@@ -396,3 +398,23 @@ class PyCode(eval.Code):
+@@ -397,3 +399,23 @@ class PyCode(eval.Code):
  
      def repr(self, space):
          return space.wrap(self.get_repr())
@@ -41,9 +41,9 @@ diff -up pypy-1.5-src/pypy/interpreter/pycode.py.more-readable-c-code pypy-1.5-s
 +        # raise an IOError)
 +        self._ensure_source()
 +        return self._cached_source[linenum - 1]
-diff -up pypy-1.5-src/pypy/objspace/flow/model.py.more-readable-c-code pypy-1.5-src/pypy/objspace/flow/model.py
---- pypy-1.5-src/pypy/objspace/flow/model.py.more-readable-c-code	2011-04-30 10:18:50.000000000 -0400
-+++ pypy-1.5-src/pypy/objspace/flow/model.py	2011-05-02 14:28:33.942161002 -0400
+diff -up pypy-pypy-release-1.7/pypy/objspace/flow/model.py.more-readable-c-code pypy-pypy-release-1.7/pypy/objspace/flow/model.py
+--- pypy-pypy-release-1.7/pypy/objspace/flow/model.py.more-readable-c-code	2011-11-19 02:44:54.000000000 -0500
++++ pypy-pypy-release-1.7/pypy/objspace/flow/model.py	2011-11-21 16:15:36.599466455 -0500
 @@ -31,6 +31,120 @@ from pypy.tool.identity_dict import iden
  
  __metaclass__ = type
@@ -268,10 +268,10 @@ diff -up pypy-1.5-src/pypy/objspace/flow/model.py.more-readable-c-code pypy-1.5-
                      result.append(copyop)
                  return result
              newblock.operations = copyoplist(block.operations)
-diff -up pypy-1.5-src/pypy/objspace/flow/objspace.py.more-readable-c-code pypy-1.5-src/pypy/objspace/flow/objspace.py
---- pypy-1.5-src/pypy/objspace/flow/objspace.py.more-readable-c-code	2011-04-30 10:18:50.000000000 -0400
-+++ pypy-1.5-src/pypy/objspace/flow/objspace.py	2011-05-02 14:28:33.943161001 -0400
-@@ -313,7 +313,9 @@ class FlowObjSpace(ObjSpace):
+diff -up pypy-pypy-release-1.7/pypy/objspace/flow/objspace.py.more-readable-c-code pypy-pypy-release-1.7/pypy/objspace/flow/objspace.py
+--- pypy-pypy-release-1.7/pypy/objspace/flow/objspace.py.more-readable-c-code	2011-11-19 02:44:54.000000000 -0500
++++ pypy-pypy-release-1.7/pypy/objspace/flow/objspace.py	2011-11-21 16:15:36.600466455 -0500
+@@ -315,7 +315,9 @@ class FlowObjSpace(ObjSpace):
      def do_operation(self, name, *args_w):
          spaceop = SpaceOperation(name, args_w, Variable())
          if hasattr(self, 'executioncontext'):  # not here during bootstrapping
@@ -282,9 +282,9 @@ diff -up pypy-1.5-src/pypy/objspace/flow/objspace.py.more-readable-c-code pypy-1
              self.executioncontext.recorder.append(spaceop)
          return spaceop.result
  
-diff -up pypy-1.5-src/pypy/objspace/flow/test/test_model.py.more-readable-c-code pypy-1.5-src/pypy/objspace/flow/test/test_model.py
---- pypy-1.5-src/pypy/objspace/flow/test/test_model.py.more-readable-c-code	2011-04-30 10:18:50.000000000 -0400
-+++ pypy-1.5-src/pypy/objspace/flow/test/test_model.py	2011-05-02 14:28:33.943161001 -0400
+diff -up pypy-pypy-release-1.7/pypy/objspace/flow/test/test_model.py.more-readable-c-code pypy-pypy-release-1.7/pypy/objspace/flow/test/test_model.py
+--- pypy-pypy-release-1.7/pypy/objspace/flow/test/test_model.py.more-readable-c-code	2011-11-19 02:44:54.000000000 -0500
++++ pypy-pypy-release-1.7/pypy/objspace/flow/test/test_model.py	2011-11-21 16:15:36.600466455 -0500
 @@ -119,3 +119,25 @@ def test_variable():
      assert v2.renamed
      assert v2.name.startswith("foobar_") and v2.name != v.name
@@ -311,9 +311,9 @@ diff -up pypy-1.5-src/pypy/objspace/flow/test/test_model.py.more-readable-c-code
 +    assert cmp(oplocA, oplocB) < 0
 +    assert cmp(oplocB, oplocA) > 0
 +
-diff -up pypy-1.5-src/pypy/rpython/rtyper.py.more-readable-c-code pypy-1.5-src/pypy/rpython/rtyper.py
---- pypy-1.5-src/pypy/rpython/rtyper.py.more-readable-c-code	2011-04-30 10:18:50.000000000 -0400
-+++ pypy-1.5-src/pypy/rpython/rtyper.py	2011-05-02 14:28:33.943161001 -0400
+diff -up pypy-pypy-release-1.7/pypy/rpython/rtyper.py.more-readable-c-code pypy-pypy-release-1.7/pypy/rpython/rtyper.py
+--- pypy-pypy-release-1.7/pypy/rpython/rtyper.py.more-readable-c-code	2011-11-19 02:44:54.000000000 -0500
++++ pypy-pypy-release-1.7/pypy/rpython/rtyper.py	2011-11-21 16:15:36.601466455 -0500
 @@ -800,7 +800,7 @@ class HighLevelOp(object):
          return vars
  
@@ -341,9 +341,9 @@ diff -up pypy-1.5-src/pypy/rpython/rtyper.py.more-readable-c-code pypy-1.5-src/p
          if resulttype is None:
              vresult.concretetype = Void
              return None
-diff -up pypy-1.5-src/pypy/translator/backendopt/inline.py.more-readable-c-code pypy-1.5-src/pypy/translator/backendopt/inline.py
---- pypy-1.5-src/pypy/translator/backendopt/inline.py.more-readable-c-code	2011-04-30 10:18:50.000000000 -0400
-+++ pypy-1.5-src/pypy/translator/backendopt/inline.py	2011-05-02 14:32:26.975161005 -0400
+diff -up pypy-pypy-release-1.7/pypy/translator/backendopt/inline.py.more-readable-c-code pypy-pypy-release-1.7/pypy/translator/backendopt/inline.py
+--- pypy-pypy-release-1.7/pypy/translator/backendopt/inline.py.more-readable-c-code	2011-11-19 02:44:54.000000000 -0500
++++ pypy-pypy-release-1.7/pypy/translator/backendopt/inline.py	2011-11-21 16:15:36.601466455 -0500
 @@ -4,6 +4,7 @@ from pypy.translator.simplify import get
  from pypy.translator.unsimplify import copyvar
  from pypy.objspace.flow.model import Variable, Constant, Block, Link
@@ -371,9 +371,9 @@ diff -up pypy-1.5-src/pypy/translator/backendopt/inline.py.more-readable-c-code 
          return result
  
      def copy_block(self, block):
-diff -up pypy-1.5-src/pypy/translator/c/funcgen.py.more-readable-c-code pypy-1.5-src/pypy/translator/c/funcgen.py
---- pypy-1.5-src/pypy/translator/c/funcgen.py.more-readable-c-code	2011-04-30 10:18:50.000000000 -0400
-+++ pypy-1.5-src/pypy/translator/c/funcgen.py	2011-05-02 14:28:33.944161001 -0400
+diff -up pypy-pypy-release-1.7/pypy/translator/c/funcgen.py.more-readable-c-code pypy-pypy-release-1.7/pypy/translator/c/funcgen.py
+--- pypy-pypy-release-1.7/pypy/translator/c/funcgen.py.more-readable-c-code	2011-11-19 02:44:54.000000000 -0500
++++ pypy-pypy-release-1.7/pypy/translator/c/funcgen.py	2011-11-21 16:15:36.602466455 -0500
 @@ -1,4 +1,6 @@
  import sys
 +import inspect
@@ -420,7 +420,7 @@ diff -up pypy-1.5-src/pypy/translator/c/funcgen.py.more-readable-c-code pypy-1.5
  class FunctionCodeGenerator(object):
      """
      Collects information about a function which we have to generate
-@@ -210,14 +244,57 @@ class FunctionCodeGenerator(object):
+@@ -207,14 +241,57 @@ class FunctionCodeGenerator(object):
  
      def cfunction_body(self):
          graph = self.graph
@@ -481,7 +481,7 @@ diff -up pypy-1.5-src/pypy/translator/c/funcgen.py.more-readable-c-code pypy-1.5
                  for line in self.gen_op(op):
                      yield line
              if len(block.exits) == 0:
-@@ -309,7 +386,7 @@ class FunctionCodeGenerator(object):
+@@ -306,7 +383,7 @@ class FunctionCodeGenerator(object):
              assignments.append((a2typename, dest, src))
          for line in gen_assignments(assignments):
              yield line
@@ -490,16 +490,16 @@ diff -up pypy-1.5-src/pypy/translator/c/funcgen.py.more-readable-c-code pypy-1.5
          if link.target in self.innerloops:
              loop = self.innerloops[link.target]
              if link is loop.links[-1]:   # link that ends a loop
-diff -up pypy-1.5-src/pypy/translator/c/test/test_genc.py.more-readable-c-code pypy-1.5-src/pypy/translator/c/test/test_genc.py
---- pypy-1.5-src/pypy/translator/c/test/test_genc.py.more-readable-c-code	2011-04-30 10:18:50.000000000 -0400
-+++ pypy-1.5-src/pypy/translator/c/test/test_genc.py	2011-05-02 14:28:33.945161001 -0400
+diff -up pypy-pypy-release-1.7/pypy/translator/c/test/test_genc.py.more-readable-c-code pypy-pypy-release-1.7/pypy/translator/c/test/test_genc.py
+--- pypy-pypy-release-1.7/pypy/translator/c/test/test_genc.py.more-readable-c-code	2011-11-19 02:44:54.000000000 -0500
++++ pypy-pypy-release-1.7/pypy/translator/c/test/test_genc.py	2011-11-21 16:15:36.602466455 -0500
 @@ -1,4 +1,5 @@
  import autopath, sys, os, py
 +import re
  from pypy.rpython.lltypesystem.lltype import *
  from pypy.annotation import model as annmodel
  from pypy.translator.translator import TranslationContext
-@@ -515,3 +516,130 @@ def test_inhibit_tail_call():
+@@ -532,3 +533,130 @@ def test_inhibit_tail_call():
      else:
          assert 0, "the call was not found in the C source"
      assert 'PYPY_INHIBIT_TAIL_CALL();' in lines[i+1]
@@ -630,10 +630,10 @@ diff -up pypy-1.5-src/pypy/translator/c/test/test_genc.py.more-readable-c-code p
 +        assert 'Here is a ' in c_fn_src
 +        assert 'style comment within an RPython docstring' in c_fn_src
 +        
-diff -up pypy-1.5-src/pypy/translator/driver.py.more-readable-c-code pypy-1.5-src/pypy/translator/driver.py
---- pypy-1.5-src/pypy/translator/driver.py.more-readable-c-code	2011-04-30 10:18:50.000000000 -0400
-+++ pypy-1.5-src/pypy/translator/driver.py	2011-05-02 14:28:33.945161001 -0400
-@@ -536,6 +536,7 @@ class TranslationDriver(SimpleTaskEngine
+diff -up pypy-pypy-release-1.7/pypy/translator/driver.py.more-readable-c-code pypy-pypy-release-1.7/pypy/translator/driver.py
+--- pypy-pypy-release-1.7/pypy/translator/driver.py.more-readable-c-code	2011-11-19 02:44:54.000000000 -0500
++++ pypy-pypy-release-1.7/pypy/translator/driver.py	2011-11-21 16:15:36.603466455 -0500
+@@ -535,6 +535,7 @@ class TranslationDriver(SimpleTaskEngine
              dstname = self.compute_exe_name() + '.staticdata.info'
              shutil.copy(str(fname), str(dstname))
              self.log.info('Static data info written to %s' % dstname)
@@ -641,9 +641,9 @@ diff -up pypy-1.5-src/pypy/translator/driver.py.more-readable-c-code pypy-1.5-sr
  
      #
      task_source_c = taskdef(task_source_c, ['database_c'], "Generating c source")
-diff -up pypy-1.5-src/pypy/translator/gensupp.py.more-readable-c-code pypy-1.5-src/pypy/translator/gensupp.py
---- pypy-1.5-src/pypy/translator/gensupp.py.more-readable-c-code	2011-04-30 10:18:50.000000000 -0400
-+++ pypy-1.5-src/pypy/translator/gensupp.py	2011-05-02 14:33:31.026161001 -0400
+diff -up pypy-pypy-release-1.7/pypy/translator/gensupp.py.more-readable-c-code pypy-pypy-release-1.7/pypy/translator/gensupp.py
+--- pypy-pypy-release-1.7/pypy/translator/gensupp.py.more-readable-c-code	2011-11-19 02:44:54.000000000 -0500
++++ pypy-pypy-release-1.7/pypy/translator/gensupp.py	2011-11-21 16:15:36.603466455 -0500
 @@ -14,8 +14,8 @@ def ordered_blocks(graph):
      allblocks = []
      for block in graph.iterblocks():
@@ -655,9 +655,9 @@ diff -up pypy-1.5-src/pypy/translator/gensupp.py.more-readable-c-code pypy-1.5-s
              else:
                  ofs = sys.maxint
              # then we order by input variable name or value
-diff -up pypy-1.5-src/pypy/translator/interactive.py.more-readable-c-code pypy-1.5-src/pypy/translator/interactive.py
---- pypy-1.5-src/pypy/translator/interactive.py.more-readable-c-code	2011-04-30 10:18:50.000000000 -0400
-+++ pypy-1.5-src/pypy/translator/interactive.py	2011-05-02 14:28:33.946161001 -0400
+diff -up pypy-pypy-release-1.7/pypy/translator/interactive.py.more-readable-c-code pypy-pypy-release-1.7/pypy/translator/interactive.py
+--- pypy-pypy-release-1.7/pypy/translator/interactive.py.more-readable-c-code	2011-11-19 02:44:54.000000000 -0500
++++ pypy-pypy-release-1.7/pypy/translator/interactive.py	2011-11-21 16:15:36.604466454 -0500
 @@ -138,7 +138,7 @@ class Translation(object):
      def source_c(self, argtypes=None, **kwds):
          self.update_options(argtypes, kwds)
@@ -667,9 +667,9 @@ diff -up pypy-1.5-src/pypy/translator/interactive.py.more-readable-c-code pypy-1
  
      def source_cl(self, argtypes=None, **kwds):
          self.update_options(argtypes, kwds)
-diff -up pypy-1.5-src/pypy/translator/llsupport/wrapper.py.more-readable-c-code pypy-1.5-src/pypy/translator/llsupport/wrapper.py
---- pypy-1.5-src/pypy/translator/llsupport/wrapper.py.more-readable-c-code	2011-04-30 10:18:50.000000000 -0400
-+++ pypy-1.5-src/pypy/translator/llsupport/wrapper.py	2011-05-02 14:28:33.946161001 -0400
+diff -up pypy-pypy-release-1.7/pypy/translator/llsupport/wrapper.py.more-readable-c-code pypy-pypy-release-1.7/pypy/translator/llsupport/wrapper.py
+--- pypy-pypy-release-1.7/pypy/translator/llsupport/wrapper.py.more-readable-c-code	2011-11-19 02:44:54.000000000 -0500
++++ pypy-pypy-release-1.7/pypy/translator/llsupport/wrapper.py	2011-11-21 16:15:36.604466454 -0500
 @@ -59,6 +59,8 @@ def new_wrapper(func, translator, newnam
      # "return result"
      block = Block(wrapper_inputargs)
@@ -679,10 +679,10 @@ diff -up pypy-1.5-src/pypy/translator/llsupport/wrapper.py.more-readable-c-code 
      translator.update_call_graph(wgraph, graph, object())
      translator.graphs.append(wgraph)
      block.operations[:] = newops
-diff -up pypy-1.5-src/pypy/translator/simplify.py.more-readable-c-code pypy-1.5-src/pypy/translator/simplify.py
---- pypy-1.5-src/pypy/translator/simplify.py.more-readable-c-code	2011-04-30 10:18:50.000000000 -0400
-+++ pypy-1.5-src/pypy/translator/simplify.py	2011-05-02 14:28:33.952161001 -0400
-@@ -298,7 +298,7 @@ def join_blocks(graph):
+diff -up pypy-pypy-release-1.7/pypy/translator/simplify.py.more-readable-c-code pypy-pypy-release-1.7/pypy/translator/simplify.py
+--- pypy-pypy-release-1.7/pypy/translator/simplify.py.more-readable-c-code	2011-11-19 02:44:54.000000000 -0500
++++ pypy-pypy-release-1.7/pypy/translator/simplify.py	2011-11-21 16:15:36.605466454 -0500
+@@ -292,7 +292,7 @@ def join_blocks(graph):
                  return renaming.get(v, v)
              def rename_op(op):
                  args = [rename(a) for a in op.args]

@@ -1,0 +1,49 @@
+diff -up pypy-pypy-release-1.7/pypy/translator/platform/linux.py.configure-fedora pypy-pypy-release-1.7/pypy/translator/platform/linux.py
+--- pypy-pypy-release-1.7/pypy/translator/platform/linux.py.configure-fedora	2011-11-19 02:44:54.000000000 -0500
++++ pypy-pypy-release-1.7/pypy/translator/platform/linux.py	2011-11-21 13:07:03.454240019 -0500
+@@ -1,15 +1,21 @@
+ """Support for Linux."""
+ 
++import os
+ import sys
+ from pypy.translator.platform.posix import BasePosix
+ 
++CFLAGS = ['-O3', '-pthread', '-fomit-frame-pointer',
++          '-Wall', '-Wno-unused']
++if os.environ.get('CFLAGS', None):
++    CFLAGS.extend(os.environ['CFLAGS'].split())
++CFLAGS = tuple(CFLAGS)
++
+ class BaseLinux(BasePosix):
+     name = "linux"
+     
+     link_flags = ('-pthread',)
+     extra_libs = ('-lrt',)
+-    cflags = ('-O3', '-pthread', '-fomit-frame-pointer',
+-              '-Wall', '-Wno-unused')
++    cflags = CFLAGS
+     standalone_only = ()
+     shared_only = ('-fPIC',)
+     so_ext = 'so'
+@@ -26,13 +32,14 @@ class BaseLinux(BasePosix):
+         return self._pkg_config("libffi", "--libs-only-L",
+                                 ['/usr/lib/libffi'])
+ 
+-    def library_dirs_for_libffi_a(self):
+-        # places where we need to look for libffi.a
+-        # XXX obscuuure!  only look for libffi.a if run with translate.py
+-        if 'translate' in sys.modules:
+-            return self.library_dirs_for_libffi() + ['/usr/lib']
+-        else:
+-            return []
++    # Fedora, at least, has the shared version but not the static:
++    #def library_dirs_for_libffi_a(self):
++    #    # places where we need to look for libffi.a
++    #    # XXX obscuuure!  only look for libffi.a if run with translate.py
++    #    if 'translate' in sys.modules:
++    #        return self.library_dirs_for_libffi() + ['/usr/lib']
++    #    else:
++    #        return []
+ 
+ 
+ class Linux(BaseLinux):

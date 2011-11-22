@@ -1,6 +1,6 @@
 Name:           pypy
-Version:        1.6
-Release:        7%{?dist}
+Version:        1.7
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -126,14 +126,14 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0:        https://bitbucket.org/pypy/pypy/get/release-1.6.tar.bz2
+Source0:        https://bitbucket.org/pypy/pypy/get/release-%{version}.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
 Source2:        macros.pypy
 
 # Edit a translator file for linux in order to configure our cflags and dynamic libffi
-Patch0:         pypy-1.5-config.patch
+Patch0:         config.patch
 
 # By default, if built at a tty, the translation process renders a Mandelbrot
 # set to indicate progress.
@@ -163,7 +163,7 @@ Patch3: pypy-1.4.1-add-LIBRARY_INSTALLATION_PATH.patch
 #  http://codespeak.net/pipermail/pypy-dev/2010q4/006532.html
 # TODO: get this into the upstream bug tracker, and finish inlining
 # support (rhbz#666963)
-Patch4: pypy-1.5-more-readable-c-code.patch
+Patch4: more-readable-c-code.patch
 
 # In my koji builds, /root/bin is in the PATH for some reason
 # This leads to test_subprocess.py failing, due to "test_leaking_fds_on_error"
@@ -847,6 +847,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Nov 21 2011 David Malcolm <dmalcolm@redhat.com> - 1.7-1
+- 1.7: refresh patch 0 (configuration) and patch 4 (readability of generated
+code)
+
 * Tue Oct  4 2011 David Malcolm <dmalcolm@redhat.com> - 1.6-7
 - skip test_multiprocessing
 
