@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.7
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -109,6 +109,10 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 # Easy way to enable/disable verbose logging:
 %global verbose_logs 0
+
+# Forcibly use the shadow-stack option for detecting GC roots, rather than
+# relying on hacking up generated assembler with regexps:
+%global shadow_stack 1
 
 # Easy way to turn off the selftests:
 %global run_selftests 1
@@ -429,6 +433,22 @@ BuildPyPy() {
   # plus all substrings from CFLAGS in the environment.
   # This is used to generate a value for CFLAGS that's written into the Makefile
 
+  # How will we track garbage-collection roots in the generated code?
+  #   http://pypy.readthedocs.org/en/latest/config/translation.gcrootfinder.html
+
+%if 0%{shadow_stack}
+  # This is the most portable option, and avoids a reliance on non-guaranteed
+  # behaviors within GCC's code generator: use an explicitly-maintained stack
+  # of root pointers:
+  %define gcrootfinder_options --gcrootfinder=shadowstack
+
+  export CFLAGS=$(echo "$RPM_OPT_FLAGS")
+
+%else
+  # Go with the default, which is "asmgcc"
+
+  %define gcrootfinder_options %{nil}
+
   # https://bugzilla.redhat.com/show_bug.cgi?id=588941#c18
   # The generated Makefile compiles the .c files into assembler (.s), rather
   # than direct to .o  It then post-processes this assembler to locate
@@ -442,6 +462,13 @@ BuildPyPy() {
   # pypy.  Need to check these and reenable ones that are okay later.
   # Filed as https://bugzilla.redhat.com/show_bug.cgi?id=666966
   export CFLAGS=$(echo "$RPM_OPT_FLAGS" | sed -e 's/-Wp,-D_FORTIFY_SOURCE=2//' -e 's/-fexceptions//' -e 's/-fstack-protector//' -e 's/--param=ssp-buffer-size=4//' -e 's/-O2//' -e 's/-fasynchronous-unwind-tables//' -e 's/-march=i686//' -e 's/-mtune=atom//')
+
+%endif
+
+  # The generated C code leads to many thousands of warnings of the form:
+  #   warning: variable 'l_v26003' set but not used [-Wunused-but-set-variable]
+  # Suppress them:
+  export CFLAGS=$(echo "$CFLAGS" -Wno-unused)
 
   # If we're already built the JIT-enabled "pypy", then use it for subsequent
   # builds (of other configurations):
@@ -466,6 +493,7 @@ BuildPyPy() {
     --cflags="$CFLAGS" \
     --batch \
     --output=$ExeName \
+    %{gcrootfinder_options} \
     $Options
 
   echo "--------------------------------------------------------------"
@@ -847,6 +875,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Fri Dec 16 2011 David Malcolm <dmalcolm@redhat.com> - 1.7-2
+- use --gcrootfinder=shadowstack, and use standard Fedora compilation flags,
+with -Wno-unused (rhbz#666966 and rhbz#707707)
+
 * Mon Nov 21 2011 David Malcolm <dmalcolm@redhat.com> - 1.7-1
 - 1.7: refresh patch 0 (configuration) and patch 4 (readability of generated
 code)
