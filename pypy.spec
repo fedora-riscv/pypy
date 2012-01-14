@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.7
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -875,6 +875,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Sat Jan 14 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.7-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
 * Fri Dec 16 2011 David Malcolm <dmalcolm@redhat.com> - 1.7-2
 - use --gcrootfinder=shadowstack, and use standard Fedora compilation flags,
 with -Wno-unused (rhbz#666966 and rhbz#707707)
