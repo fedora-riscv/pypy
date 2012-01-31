@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.7
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -148,18 +148,6 @@ Patch1:         pypy-1.2-suppress-mandelbrot-set-during-tty-build.patch
 # test_commmands fails on SELinux systems due to a change in the output
 # of "ls" (http://bugs.python.org/issue7108)
 Patch2: fix-test_commands-expected-ls-output-issue7108.patch
-
-# When locating the pypy standard libraries, look first within
-# LIBRARY_INSTALLATION_PATH.
-# We convert this from being a non-existant variable into a string literal
-# with the value of "pypyprefix" in the "prep" phase below.
-#
-# We still use the scanning relative to the binary location when invoking a
-# pypy binary during the build (e.g. during "check")
-#
-# Sent upstream (with caveats) as:
-#   https://codespeak.net/issue/pypy-dev/issue614
-Patch3: pypy-1.4.1-add-LIBRARY_INSTALLATION_PATH.patch
 
 # Try to improve the readability of the generated .c code, by adding in the
 # RPython source as comments where possible.
@@ -344,14 +332,6 @@ pushd lib-python/%{pylibver}
 %patch2 -p0
 popd
 
-# Look for the pypy libraries within LIBRARY_INSTALLATION_PATH first:
-%patch3 -p1
-# Fixup LIBRARY_INSTALLATION_PATH to be a string literal containing our value
-# for "pypyprefix":
-sed -i \
-  -e 's|LIBRARY_INSTALLATION_PATH|"%{pypyprefix}"|' \
-  pypy/translator/goal/app_main.py
-
 %patch4 -p1 -b .more-readable-c-code
 
 %patch5 -p1
@@ -535,7 +515,19 @@ rm -rf $RPM_BUILD_ROOT
 InstallPyPy() {
     ExeName=$1
 
-    install -m 755 %{goal_dir}/$ExeName %{buildroot}/%{_bindir}
+    # To ensure compatibility with virtualenv, pypy finds its libraries
+    # relative to itself; this happens within
+    #    pypy/translator/goal/app_main.py:get_library_path
+    # which calls sys.pypy_initial_path(dirname) on the dir containing
+    # the executable, with symlinks resolved.
+    #
+    # Hence we make /usr/bin/pypy be a symlink to the real binary, which we
+    # place within /usr/lib[64]/pypy-1.* as pypy
+    #
+    # This ought to enable our pypy build to work with virtualenv
+    # (rhbz#742641)
+    install -m 755 %{goal_dir}/$ExeName %{buildroot}/%{pypyprefix}/$ExeName
+    ln -s %{pypyprefix}/$ExeName %{buildroot}/%{_bindir}
 
     # The generated machine code doesn't need an executable stack,  but
     # one of the assembler files (gcmaptable.s) doesn't have the necessary
@@ -546,10 +538,11 @@ InstallPyPy() {
     #
     # I tried various approaches involving fixing the build, but the simplest
     # approach is to postprocess the ELF file:
-    execstack --clear-execstack %{buildroot}/%{_bindir}/$ExeName
+    execstack --clear-execstack %{buildroot}/%{pypyprefix}/$ExeName
 }
 
 mkdir -p %{buildroot}/%{_bindir}
+mkdir -p %{buildroot}/%{pypyprefix}
 
 InstallPyPy pypy
 
@@ -570,7 +563,6 @@ InstallPyPy pypy-stackless
 #   PREFIX/lib-python/modified.2.5.2
 # as given on the above page, i.e. it uses '-' not '.'
 
-mkdir -p %{buildroot}/%{pypyprefix}
 cp -a lib-python %{buildroot}/%{pypyprefix}
 
 cp -a lib_pypy %{buildroot}/%{pypyprefix}
@@ -859,6 +851,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %doc LICENSE README
 %{_bindir}/pypy
+%{pypyprefix}/pypy
 
 %files devel
 %defattr(-,root,root,-)
@@ -875,6 +868,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Jan 31 2012 David Malcolm <dmalcolm@redhat.com> - 1.7-4
+- fix an incompatibility with virtualenv (rhbz#742641)
+
 * Sat Jan 14 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.7-3
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
 
