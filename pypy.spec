@@ -1,6 +1,6 @@
 Name:           pypy
-Version:        1.6
-Release:        5%{?dist}
+Version:        1.8
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -100,9 +100,19 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # Should we build a "pypy-stackless" binary?
 %global with_stackless 0
 
+# Should we build the emacs JIT-viewing mode?
+%if 0%{?rhel} == 5 || 0%{?rhel} == 6
+%global with_emacs 0
+%else
+%global with_emacs 1
+%endif
 
 # Easy way to enable/disable verbose logging:
 %global verbose_logs 0
+
+# Forcibly use the shadow-stack option for detecting GC roots, rather than
+# relying on hacking up generated assembler with regexps:
+%global shadow_stack 1
 
 # Easy way to turn off the selftests:
 %global run_selftests 1
@@ -120,14 +130,14 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0:        https://bitbucket.org/pypy/pypy/get/release-1.6.tar.bz2
+Source0:        https://bitbucket.org/pypy/pypy/get/release-%{version}.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
 Source2:        macros.pypy
 
 # Edit a translator file for linux in order to configure our cflags and dynamic libffi
-Patch0:         pypy-1.5-config.patch
+Patch0:         config.patch
 
 # By default, if built at a tty, the translation process renders a Mandelbrot
 # set to indicate progress.
@@ -135,29 +145,13 @@ Patch0:         pypy-1.5-config.patch
 # merely render dots:
 Patch1:         pypy-1.2-suppress-mandelbrot-set-during-tty-build.patch
 
-# test_commmands fails on SELinux systems due to a change in the output
-# of "ls" (http://bugs.python.org/issue7108)
-Patch2: fix-test_commands-expected-ls-output-issue7108.patch
-
-# When locating the pypy standard libraries, look first within
-# LIBRARY_INSTALLATION_PATH.
-# We convert this from being a non-existant variable into a string literal
-# with the value of "pypyprefix" in the "prep" phase below.
-#
-# We still use the scanning relative to the binary location when invoking a
-# pypy binary during the build (e.g. during "check")
-#
-# Sent upstream (with caveats) as:
-#   https://codespeak.net/issue/pypy-dev/issue614
-Patch3: pypy-1.4.1-add-LIBRARY_INSTALLATION_PATH.patch
-
 # Try to improve the readability of the generated .c code, by adding in the
 # RPython source as comments where possible.
 # A version of this was sent upstream as:
 #  http://codespeak.net/pipermail/pypy-dev/2010q4/006532.html
 # TODO: get this into the upstream bug tracker, and finish inlining
 # support (rhbz#666963)
-Patch4: pypy-1.5-more-readable-c-code.patch
+Patch4: more-readable-c-code.patch
 
 # In my koji builds, /root/bin is in the PATH for some reason
 # This leads to test_subprocess.py failing, due to "test_leaking_fds_on_error"
@@ -213,10 +207,18 @@ Patch5: pypy-1.6-fix-test-subprocess-with-nonreadable-path-dir.patch
 BuildRequires: pypy
 %global bootstrap_python_interp pypy
 %else
+
+# Python 2.6 or later is needed, so on RHEL5 (2.4) we need to use the alternate
+# python26 rpm:
+%if 0%{?rhel} == 5
+BuildRequires: python26-devel
+%global bootstrap_python_interp python26
+%else
 BuildRequires: python-devel
 %global bootstrap_python_interp python
 %endif
 
+%endif
 
 
 # FIXME: I'm seeing errors like this in the logs:
@@ -249,7 +251,9 @@ BuildRequires:  perl
 BuildRequires:  /usr/bin/execstack
 
 # For byte-compiling the JIT-viewing mode:
+%if %{with_emacs}
 BuildRequires:  emacs
+%endif
 
 # pypy is bundling these so we delete them in %%prep.  I don't think they are
 # needed unless we build pypy targetted at running on the jvm.
@@ -279,7 +283,9 @@ Summary:  Run-time libraries used by PyPy implementations of Python
 
 # We supply an emacs mode for the JIT viewer.
 # (This doesn't bring in all of emacs, just the directory structure)
+%if %{with_emacs}
 Requires: emacs-filesystem >= %{_emacs_version}
+%endif
 
 %description libs
 Libraries required by the various PyPy implementations of Python.
@@ -314,23 +320,42 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%setup -q -n pypy-pypy-release-%{version}
+%setup -q -n pypy-pypy-2346207d9946
 %patch0 -p1 -b .configure-fedora
 %patch1 -p1 -b .suppress-mandelbrot-set-during-tty-build
 
-pushd lib-python/%{pylibver}
-%patch2 -p0
-popd
-
-# Look for the pypy libraries within LIBRARY_INSTALLATION_PATH first:
-%patch3 -p1
-# Fixup LIBRARY_INSTALLATION_PATH to be a string literal containing our value
-# for "pypyprefix":
-sed -i \
-  -e 's|LIBRARY_INSTALLATION_PATH|"%{pypyprefix}"|' \
-  pypy/translator/goal/app_main.py
-
-%patch4 -p1 -b .more-readable-c-code
+# Disabled for now, as it needs regenerating for 1.8
+#patch4 -p1 -b .more-readable-c-code
+# Fails on 1.8 with this error:
+#   [translation:ERROR] Error:
+#   [translation:ERROR]  Traceback (most recent call last):
+#   [translation:ERROR]    File "translate.py", line 309, in main
+#   [translation:ERROR]     drv.proceed(goals)
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/driver.py", line 811, in proceed
+#   [translation:ERROR]     return self._execute(goals, task_skip = self._maybe_skip())
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/tool/taskengine.py", line 116, in _execute
+#   [translation:ERROR]     res = self._do(goal, taskcallable, *args, **kwds)
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/driver.py", line 287, in _do
+#   [translation:ERROR]     res = func()
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/driver.py", line 530, in task_source_c
+#   [translation:ERROR]     exe_name=exe_name)
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/genc.py", line 252, in generate_source
+#   [translation:ERROR]     split=self.split)
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/genc.py", line 989, in gen_source
+#   [translation:ERROR]     sg.gen_readable_parts_of_source(f)
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/genc.py", line 843, in gen_readable_parts_of_source
+#   [translation:ERROR]     for node, impl in nodeiter:
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/genc.py", line 729, in subiter
+#   [translation:ERROR]     impl = '\n'.join(list(node.implementation())).split('\n')
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/node.py", line 867, in implementation
+#   [translation:ERROR]     for s in self.funcgen_implementation(funcgen):
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/node.py", line 901, in funcgen_implementation
+#   [translation:ERROR]     for line in bodyiter:
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/funcgen.py", line 272, in cfunction_body
+#   [translation:ERROR]     blocks.sort(block_comparator)
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/funcgen.py", line 34, in block_comparator
+#   [translation:ERROR]     if blk0.isstartblock:
+#   [translation:ERROR]  AttributeError: 'Block' object has no attribute 'isstartblock'
 
 %patch5 -p1
 
@@ -411,6 +436,22 @@ BuildPyPy() {
   # plus all substrings from CFLAGS in the environment.
   # This is used to generate a value for CFLAGS that's written into the Makefile
 
+  # How will we track garbage-collection roots in the generated code?
+  #   http://pypy.readthedocs.org/en/latest/config/translation.gcrootfinder.html
+
+%if 0%{shadow_stack}
+  # This is the most portable option, and avoids a reliance on non-guaranteed
+  # behaviors within GCC's code generator: use an explicitly-maintained stack
+  # of root pointers:
+  %define gcrootfinder_options --gcrootfinder=shadowstack
+
+  export CFLAGS=$(echo "$RPM_OPT_FLAGS")
+
+%else
+  # Go with the default, which is "asmgcc"
+
+  %define gcrootfinder_options %{nil}
+
   # https://bugzilla.redhat.com/show_bug.cgi?id=588941#c18
   # The generated Makefile compiles the .c files into assembler (.s), rather
   # than direct to .o  It then post-processes this assembler to locate
@@ -424,6 +465,13 @@ BuildPyPy() {
   # pypy.  Need to check these and reenable ones that are okay later.
   # Filed as https://bugzilla.redhat.com/show_bug.cgi?id=666966
   export CFLAGS=$(echo "$RPM_OPT_FLAGS" | sed -e 's/-Wp,-D_FORTIFY_SOURCE=2//' -e 's/-fexceptions//' -e 's/-fstack-protector//' -e 's/--param=ssp-buffer-size=4//' -e 's/-O2//' -e 's/-fasynchronous-unwind-tables//' -e 's/-march=i686//' -e 's/-mtune=atom//')
+
+%endif
+
+  # The generated C code leads to many thousands of warnings of the form:
+  #   warning: variable 'l_v26003' set but not used [-Wunused-but-set-variable]
+  # Suppress them:
+  export CFLAGS=$(echo "$CFLAGS" -Wno-unused)
 
   # If we're already built the JIT-enabled "pypy", then use it for subsequent
   # builds (of other configurations):
@@ -448,6 +496,7 @@ BuildPyPy() {
     --cflags="$CFLAGS" \
     --batch \
     --output=$ExeName \
+    %{gcrootfinder_options} \
     $Options
 
   echo "--------------------------------------------------------------"
@@ -476,7 +525,9 @@ BuildPyPy \
    "--stackless"
 %endif
 
+%if %{with_emacs}
 %{_emacs_bytecompile} pypy/jit/tool/pypytrace-mode.el
+%endif
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -487,7 +538,19 @@ rm -rf $RPM_BUILD_ROOT
 InstallPyPy() {
     ExeName=$1
 
-    install -m 755 %{goal_dir}/$ExeName %{buildroot}/%{_bindir}
+    # To ensure compatibility with virtualenv, pypy finds its libraries
+    # relative to itself; this happens within
+    #    pypy/translator/goal/app_main.py:get_library_path
+    # which calls sys.pypy_initial_path(dirname) on the dir containing
+    # the executable, with symlinks resolved.
+    #
+    # Hence we make /usr/bin/pypy be a symlink to the real binary, which we
+    # place within /usr/lib[64]/pypy-1.* as pypy
+    #
+    # This ought to enable our pypy build to work with virtualenv
+    # (rhbz#742641)
+    install -m 755 %{goal_dir}/$ExeName %{buildroot}/%{pypyprefix}/$ExeName
+    ln -s %{pypyprefix}/$ExeName %{buildroot}/%{_bindir}
 
     # The generated machine code doesn't need an executable stack,  but
     # one of the assembler files (gcmaptable.s) doesn't have the necessary
@@ -498,10 +561,11 @@ InstallPyPy() {
     #
     # I tried various approaches involving fixing the build, but the simplest
     # approach is to postprocess the ELF file:
-    execstack --clear-execstack %{buildroot}/%{_bindir}/$ExeName
+    execstack --clear-execstack %{buildroot}/%{pypyprefix}/$ExeName
 }
 
 mkdir -p %{buildroot}/%{_bindir}
+mkdir -p %{buildroot}/%{pypyprefix}
 
 InstallPyPy pypy
 
@@ -522,7 +586,6 @@ InstallPyPy pypy-stackless
 #   PREFIX/lib-python/modified.2.5.2
 # as given on the above page, i.e. it uses '-' not '.'
 
-mkdir -p %{buildroot}/%{pypyprefix}
 cp -a lib-python %{buildroot}/%{pypyprefix}
 
 cp -a lib_pypy %{buildroot}/%{pypyprefix}
@@ -654,8 +717,10 @@ find \
 # are acceptable.
 
 # Install the JIT trace mode for Emacs:
+%if %{with_emacs}
 mkdir -p %{buildroot}/%{_emacs_sitelispdir}
 cp -a pypy/jit/tool/pypytrace-mode.el* %{buildroot}/%{_emacs_sitelispdir}
+%endif
 
 # Install macros for rpm:
 mkdir -p %{buildroot}/%{_sysconfdir}/rpm
@@ -800,13 +865,16 @@ rm -rf $RPM_BUILD_ROOT
 %{pypyprefix}/lib-python/conftest.py*
 %{pypyprefix}/lib_pypy/
 %{pypyprefix}/site-packages/
+%if %{with_emacs}
 %{_emacs_sitelispdir}/pypytrace-mode.el
 %{_emacs_sitelispdir}/pypytrace-mode.elc
+%endif
 
 %files
 %defattr(-,root,root,-)
 %doc LICENSE README
 %{_bindir}/pypy
+%{pypyprefix}/pypy
 
 %files devel
 %defattr(-,root,root,-)
@@ -823,6 +891,32 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Fri Feb 10 2012 David Malcolm <dmalcolm@redhat.com> - 1.8-2
+- disable C readability patch for now (patch 4)
+
+* Thu Feb  9 2012 David Malcolm <dmalcolm@redhat.com> - 1.8-1
+- 1.8; regenerate config patch (patch 0); drop selinux patch (patch 2);
+regenerate patch 5
+
+* Tue Jan 31 2012 David Malcolm <dmalcolm@redhat.com> - 1.7-4
+- fix an incompatibility with virtualenv (rhbz#742641)
+
+* Sat Jan 14 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.7-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_17_Mass_Rebuild
+
+* Fri Dec 16 2011 David Malcolm <dmalcolm@redhat.com> - 1.7-2
+- use --gcrootfinder=shadowstack, and use standard Fedora compilation flags,
+with -Wno-unused (rhbz#666966 and rhbz#707707)
+
+* Mon Nov 21 2011 David Malcolm <dmalcolm@redhat.com> - 1.7-1
+- 1.7: refresh patch 0 (configuration) and patch 4 (readability of generated
+code)
+
+* Tue Oct  4 2011 David Malcolm <dmalcolm@redhat.com> - 1.6-7
+- don't ship the emacs JIT-viewer on el5 and el6 (missing emacs-filesystem;
+missing _emacs_bytecompile macro on el5)
+- build using python26 on el5 (2.4 is too early)
+
 * Tue Oct  4 2011 David Malcolm <dmalcolm@redhat.com> - 1.6-5
 - skip test_multiprocessing
 
