@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.8
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -324,7 +324,38 @@ Build of PyPy with support for micro-threads for massive concurrency
 %patch0 -p1 -b .configure-fedora
 %patch1 -p1 -b .suppress-mandelbrot-set-during-tty-build
 
-%patch4 -p1 -b .more-readable-c-code
+# Disabled for now, as it needs regenerating for 1.8
+#patch4 -p1 -b .more-readable-c-code
+# Fails on 1.8 with this error:
+#   [translation:ERROR] Error:
+#   [translation:ERROR]  Traceback (most recent call last):
+#   [translation:ERROR]    File "translate.py", line 309, in main
+#   [translation:ERROR]     drv.proceed(goals)
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/driver.py", line 811, in proceed
+#   [translation:ERROR]     return self._execute(goals, task_skip = self._maybe_skip())
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/tool/taskengine.py", line 116, in _execute
+#   [translation:ERROR]     res = self._do(goal, taskcallable, *args, **kwds)
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/driver.py", line 287, in _do
+#   [translation:ERROR]     res = func()
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/driver.py", line 530, in task_source_c
+#   [translation:ERROR]     exe_name=exe_name)
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/genc.py", line 252, in generate_source
+#   [translation:ERROR]     split=self.split)
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/genc.py", line 989, in gen_source
+#   [translation:ERROR]     sg.gen_readable_parts_of_source(f)
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/genc.py", line 843, in gen_readable_parts_of_source
+#   [translation:ERROR]     for node, impl in nodeiter:
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/genc.py", line 729, in subiter
+#   [translation:ERROR]     impl = '\n'.join(list(node.implementation())).split('\n')
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/node.py", line 867, in implementation
+#   [translation:ERROR]     for s in self.funcgen_implementation(funcgen):
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/node.py", line 901, in funcgen_implementation
+#   [translation:ERROR]     for line in bodyiter:
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/funcgen.py", line 272, in cfunction_body
+#   [translation:ERROR]     blocks.sort(block_comparator)
+#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/funcgen.py", line 34, in block_comparator
+#   [translation:ERROR]     if blk0.isstartblock:
+#   [translation:ERROR]  AttributeError: 'Block' object has no attribute 'isstartblock'
 
 %patch5 -p1
 
@@ -860,6 +891,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Fri Feb 10 2012 David Malcolm <dmalcolm@redhat.com> - 1.8-2
+- disable C readability patch for now (patch 4)
+
 * Thu Feb  9 2012 David Malcolm <dmalcolm@redhat.com> - 1.8-1
 - 1.8; regenerate config patch (patch 0); drop selinux patch (patch 2);
 regenerate patch 5
