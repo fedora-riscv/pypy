@@ -1,6 +1,6 @@
 Name:           pypy
-Version:        1.7
-Release:        4%{?dist}
+Version:        1.8
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -144,10 +144,6 @@ Patch0:         config.patch
 # This obscures useful messages, and may waste CPU cycles, so suppress it, and
 # merely render dots:
 Patch1:         pypy-1.2-suppress-mandelbrot-set-during-tty-build.patch
-
-# test_commmands fails on SELinux systems due to a change in the output
-# of "ls" (http://bugs.python.org/issue7108)
-Patch2: fix-test_commands-expected-ls-output-issue7108.patch
 
 # Try to improve the readability of the generated .c code, by adding in the
 # RPython source as comments where possible.
@@ -324,13 +320,9 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%setup -q -n pypy-pypy-release-%{version}
+%setup -q -n pypy-pypy-2346207d9946
 %patch0 -p1 -b .configure-fedora
 %patch1 -p1 -b .suppress-mandelbrot-set-during-tty-build
-
-pushd lib-python/%{pylibver}
-%patch2 -p0
-popd
 
 %patch4 -p1 -b .more-readable-c-code
 
@@ -868,6 +860,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Feb  9 2012 David Malcolm <dmalcolm@redhat.com> - 1.8-1
+- 1.8; regenerate config patch (patch 0); drop selinux patch (patch 2);
+regenerate patch 5
+
 * Tue Jan 31 2012 David Malcolm <dmalcolm@redhat.com> - 1.7-4
 - fix an incompatibility with virtualenv (rhbz#742641)
 
