@@ -1,6 +1,6 @@
 Name:           pypy
-Version:        1.8
-Release:        2%{?dist}
+Version:        1.9
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -320,7 +320,7 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%setup -q -n pypy-pypy-2346207d9946
+%setup -q -n pypy-pypy-341e1e3821ff
 %patch0 -p1 -b .configure-fedora
 %patch1 -p1 -b .suppress-mandelbrot-set-during-tty-build
 
@@ -861,7 +861,6 @@ rm -rf $RPM_BUILD_ROOT
 %dir %{pypyprefix}/lib-python
 %{pypyprefix}/lib-python/stdlib-version.txt
 %{pypyprefix}/lib-python/%{pylibver}/
-%{pypyprefix}/lib-python/modified-%{pylibver}/
 %{pypyprefix}/lib-python/conftest.py*
 %{pypyprefix}/lib_pypy/
 %{pypyprefix}/site-packages/
@@ -891,6 +890,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Fri Jun  8 2012 David Malcolm <dmalcolm@redhat.com> - 1.9-1
+- 1.9
+
 * Fri Feb 10 2012 David Malcolm <dmalcolm@redhat.com> - 1.8-2
 - disable C readability patch for now (patch 4)
 
