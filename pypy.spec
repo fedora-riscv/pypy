@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.9
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -471,7 +471,7 @@ BuildPyPy() {
   # The generated C code leads to many thousands of warnings of the form:
   #   warning: variable 'l_v26003' set but not used [-Wunused-but-set-variable]
   # Suppress them:
-  export CFLAGS=$(echo "$CFLAGS" -Wno-unused)
+  export CFLAGS=$(echo "$CFLAGS" -Wno-unused -fPIC)
 
   # If we're already built the JIT-enabled "pypy", then use it for subsequent
   # builds (of other configurations):
@@ -890,6 +890,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Jun 18 2012 Peter Robinson <pbrobinson@fedoraproject.org> - 1.9-2
+- Compile with PIC, fixes FTBFS on ARM
+
 * Fri Jun  8 2012 David Malcolm <dmalcolm@redhat.com> - 1.9-1
 - 1.9
 
