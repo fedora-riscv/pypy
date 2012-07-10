@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.9
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -163,6 +163,39 @@ Patch4: more-readable-c-code.patch
 # executable
 # Not yet sent upstream
 Patch5: pypy-1.6-fix-test-subprocess-with-nonreadable-path-dir.patch
+
+# Patch pypy.translator.platform so that stdout from "make" etc gets logged,
+# rather than just stderr, so that the command-line invocations of the compiler
+# and linker are captured:
+Patch6: 006-always-log-stdout.patch
+
+# Disable the printing of a quote from IRC on startup (these are stored in
+# ROT13 form in lib_pypy/_pypy_irc_topic.py).  Some are cute, but some could
+# cause confusion for end-users (and many are in-jokes within the PyPy
+# community that won't make sense outside of it).  [Sorry to be a killjoy]
+Patch7: 007-remove-startup-message.patch
+
+# With pypy-1.9-1.fc17.x86_64, the pypy binary exposes about 200k symbols to
+# the dynamic linker:
+#    $ eu-readelf -s $(which pypy) | head
+#    Symbol table [ 5] '.dynsym' contains 194163 entries:
+# which is far more than necessary.
+# Fix the version script for the linker as invoked thus in the Makefile:
+#   "-Wl,--export-dynamic,--version-script=../dynamic-symbols-6"
+# so that it contains a "local: *;" clause, thus hiding the bulk of the
+# symbols from the dynamic linker.
+# Ideally we'd add:
+#   __attribute__ ((visibility ("hidden")))
+# to most symbols, allowing the compiler to potentially generate better code.
+# Not yet reported upstream
+Patch8: 008-fix-dynamic-symbols-script.patch
+
+
+# Cherrypick upstream patch to add PyInt_AsUnsignedLongLongMask (used by
+# the rpm python bindings); see https://bugs.pypy.org/issue1211
+# This is https://bitbucket.org/pypy/pypy/changeset/542d481517d3
+Patch9: 009-add-PyInt_AsUnsignedLongLongMask.patch
+
 
 # Build-time requirements:
 
@@ -358,6 +391,11 @@ Build of PyPy with support for micro-threads for massive concurrency
 #   [translation:ERROR]  AttributeError: 'Block' object has no attribute 'isstartblock'
 
 %patch5 -p1
+%patch6 -p1
+%patch7 -p1
+%patch8 -p1
+%patch9 -p1
+
 
 # Replace /usr/local/bin/python shebangs with /usr/bin/python:
 find -name "*.py" -exec \
@@ -696,14 +734,30 @@ mkdir -p %{buildroot}%{pypy_debuginfo_dir}
 # copy over everything:
 cp -a pypy %{buildroot}%{pypy_debuginfo_dir}
 
-# ...then delete files that aren't .py files:
+# ...then delete files that aren't:
+#   - *.py files
+#   - the Makefile
+#   - typeids.txt
+#   - dynamic-symbols-*
 find \
-  %{buildroot}%{pypy_debuginfo_dir} \
-  \( -type f                        \
-     -a                             \
-     \! -name "*.py"                \
-  \)                                \
+  %{buildroot}%{pypy_debuginfo_dir}  \
+  \( -type f                         \
+     -a                              \
+     \! \( -name "*.py"              \
+           -o                        \
+           -name "Makefile"          \
+           -o                        \
+           -name "typeids.txt"       \
+           -o                        \
+           -name "dynamic-symbols-*" \
+        \)                           \
+  \)                                 \
   -delete
+
+# Alternatively, we could simply keep everything.  This leads to a ~350MB
+# debuginfo package, but it makes it easy to hack on the Makefile and C build
+# flags by rebuilding/linking the sources.
+# To do so, remove the above "find" command.
 
 # We don't need bytecode for these files; they are being included for reference
 # purposes.
@@ -890,6 +944,14 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Jul 10 2012 David Malcolm <dmalcolm@redhat.com> - 1.9-3
+- log all output from "make" (patch 6)
+- disable the MOTD at startup (patch 7)
+- hide symbols from the dynamic linker (patch 8)
+- add PyInt_AsUnsignedLongLongMask (patch 9)
+- capture the Makefile, the typeids.txt, and the dynamic-symbols file within
+the debuginfo package
+
 * Mon Jun 18 2012 Peter Robinson <pbrobinson@fedoraproject.org> - 1.9-2
 - Compile with PIC, fixes FTBFS on ARM
 
