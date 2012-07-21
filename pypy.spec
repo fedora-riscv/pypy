@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.9
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -944,6 +944,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Sat Jul 21 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.9-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
+
 * Tue Jul 10 2012 David Malcolm <dmalcolm@redhat.com> - 1.9-3
 - log all output from "make" (patch 6)
 - disable the MOTD at startup (patch 7)
