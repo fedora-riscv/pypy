@@ -1,6 +1,8 @@
+%global alphatag b1
+
 Name:           pypy
-Version:        1.9
-Release:        4%{?dist}
+Version:        2.0
+Release:        0.1.%{alphatag}%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -130,7 +132,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0:        https://bitbucket.org/pypy/pypy/get/release-%{version}.tar.bz2
+Source0:        https://bitbucket.org/pypy/pypy/get/release-2.0-beta-1.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
@@ -189,12 +191,6 @@ Patch7: 007-remove-startup-message.patch
 # to most symbols, allowing the compiler to potentially generate better code.
 # Not yet reported upstream
 Patch8: 008-fix-dynamic-symbols-script.patch
-
-
-# Cherrypick upstream patch to add PyInt_AsUnsignedLongLongMask (used by
-# the rpm python bindings); see https://bugs.pypy.org/issue1211
-# This is https://bitbucket.org/pypy/pypy/changeset/542d481517d3
-Patch9: 009-add-PyInt_AsUnsignedLongLongMask.patch
 
 
 # Build-time requirements:
@@ -353,7 +349,7 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%setup -q -n pypy-pypy-341e1e3821ff
+%setup -q -n pypy-pypy-07e08e9c885c
 %patch0 -p1 -b .configure-fedora
 %patch1 -p1 -b .suppress-mandelbrot-set-during-tty-build
 
@@ -394,7 +390,6 @@ Build of PyPy with support for micro-threads for massive concurrency
 %patch6 -p1
 %patch7 -p1
 %patch8 -p1
-%patch9 -p1
 
 
 # Replace /usr/local/bin/python shebangs with /usr/bin/python:
@@ -630,6 +625,10 @@ cp -a lib_pypy %{buildroot}/%{pypyprefix}
 
 # Remove a text file that documents which selftests fail on Win32:
 rm %{buildroot}/%{pypyprefix}/lib-python/win32-failures.txt
+
+# Remove a text file containing upstream's recipe for syncing stdlib in
+# their hg repository with cpython's:
+rm %{buildroot}/%{pypyprefix}/lib-python/stdlib-upgrade.txt
 
 # Remove shebang lines from .py files that aren't executable, and
 # remove executability from .py files that don't have a shebang line:
@@ -944,6 +943,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Dec 11 2012 David Malcolm <dmalcolm@redhat.com> - 2.0-0.1.b1
+- 2.0b1 (drop upstreamed patch 9)
+
 * Sat Jul 21 2012 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 1.9-4
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_18_Mass_Rebuild
 
