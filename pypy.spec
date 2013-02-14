@@ -2,7 +2,7 @@
 
 Name:           pypy
 Version:        2.0
-Release:        0.1.%{alphatag}%{?dist}
+Release:        0.2.%{alphatag}%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -943,6 +943,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Feb 14 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.0-0.2.b1
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
+
 * Tue Dec 11 2012 David Malcolm <dmalcolm@redhat.com> - 2.0-0.1.b1
 - 2.0b1 (drop upstreamed patch 9)
 
