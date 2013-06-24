@@ -2,7 +2,7 @@
 
 Name:           pypy
 Version:        2.0.2
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -921,6 +921,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Jun 24 2013 Matej Stuchlik <mstuchli@redhat.com> - 2.0.2-4
+- Patch1 fix
+
 * Mon Jun 24 2013 Matej Stuchlik <mstuchli@redhat.com> - 2.0.2-3
 - Yet another Sources fix
 
