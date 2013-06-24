@@ -1,6 +1,7 @@
---- pypy-pypy-2346207d9946/lib-python/2.7/test/test_subprocess.py.orig	2012-02-09 13:27:19.000000000 -0500
-+++ pypy-pypy-2346207d9946/lib-python/2.7/test/test_subprocess.py	2012-02-10 09:14:08.312216221 -0500
-@@ -570,7 +570,7 @@ class ProcessTestCase(BaseTestCase):
+diff -rup pypy-pypy-f66246c46ca3/lib-python/2.7/test/test_subprocess.py pypy-pypy-f66246c46ca3/lib-python/2.7/test/test_subprocess.py
+--- pypy-pypy-f66246c46ca3/lib-python/2.7/test/test_subprocess.py	2013-05-27 10:35:37.762237806 +0200
++++ pypy-pypy-f66246c46ca3/lib-python/2.7/test/test_subprocess.py	2013-05-28 10:13:03.182536196 +0200
+@@ -587,7 +587,7 @@ class ProcessTestCase(BaseTestCase):
          for i in range(1024):
              # Windows raises IOError.  Others raise OSError.
              with self.assertRaises(EnvironmentError) as c:
