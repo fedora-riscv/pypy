@@ -2,7 +2,7 @@
 
 Name:           pypy
 Version:        2.0.2
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -132,7 +132,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0:	https://bitbucket.org/pypy/pypy/get/release-2.0.2.tar.bz2
+Source0:	https://bitbucket.org/pypy/pypy/get/release-2.0.2.tar.bz2#/pypy-pypy-f66246c46ca3.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
@@ -921,6 +921,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Jun 24 2013 Matej Stuchlik <mstuchli@redhat.com> - 2.0.2-2
+- Fixed Source URL
+
 * Mon Jun 24 2013 Matej Stuchlik <mstuchli@redhat.com> - 2.0.2-1
 - 2.0.2, patch 8 does not seem necessary anymore
 
