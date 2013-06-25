@@ -1,8 +1,8 @@
 %global alphatag b1
 
 Name:           pypy
-Version:        2.0
-Release:        0.2.%{alphatag}%{?dist}
+Version:        2.0.2
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -123,7 +123,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %global pylibver 2.7
 
 # We refer to this subdir of the source tree in a few places during the build:
-%global goal_dir pypy/translator/goal
+%global goal_dir pypy/goal
 
 
 # Turn off the brp-python-bytecompile postprocessing script
@@ -132,7 +132,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0:        https://bitbucket.org/pypy/pypy/get/release-2.0-beta-1.tar.bz2
+Source0:	https://bitbucket.org/pypy/pypy/get/release-2.0.2.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
@@ -176,21 +176,6 @@ Patch6: 006-always-log-stdout.patch
 # cause confusion for end-users (and many are in-jokes within the PyPy
 # community that won't make sense outside of it).  [Sorry to be a killjoy]
 Patch7: 007-remove-startup-message.patch
-
-# With pypy-1.9-1.fc17.x86_64, the pypy binary exposes about 200k symbols to
-# the dynamic linker:
-#    $ eu-readelf -s $(which pypy) | head
-#    Symbol table [ 5] '.dynsym' contains 194163 entries:
-# which is far more than necessary.
-# Fix the version script for the linker as invoked thus in the Makefile:
-#   "-Wl,--export-dynamic,--version-script=../dynamic-symbols-6"
-# so that it contains a "local: *;" clause, thus hiding the bulk of the
-# symbols from the dynamic linker.
-# Ideally we'd add:
-#   __attribute__ ((visibility ("hidden")))
-# to most symbols, allowing the compiler to potentially generate better code.
-# Not yet reported upstream
-Patch8: 008-fix-dynamic-symbols-script.patch
 
 
 # Build-time requirements:
@@ -349,7 +334,7 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%setup -q -n pypy-pypy-07e08e9c885c
+%setup -q -n pypy-pypy-f66246c46ca3
 %patch0 -p1 -b .configure-fedora
 %patch1 -p1 -b .suppress-mandelbrot-set-during-tty-build
 
@@ -389,7 +374,6 @@ Build of PyPy with support for micro-threads for massive concurrency
 %patch5 -p1
 %patch6 -p1
 %patch7 -p1
-%patch8 -p1
 
 
 # Replace /usr/local/bin/python shebangs with /usr/bin/python:
@@ -408,9 +392,7 @@ find . -path '*/.svn*' -delete
 # Remove DOS batch files:
 find -name "*.bat"|xargs rm -f
 
-# The "demo" directory gets auto-installed by virture of being listed in %doc
-# Remove shebang lines from demo .py files, and remove executability from them:
-for f in demo/bpnn.py ; do
+for f in rpython/translator/goal/bpnn.py ; do
    # Detect shebang lines && remove them:
    sed -e '/^#!/Q 0' -e 'Q 1' $f \
       && sed -i '1d' $f
@@ -522,15 +504,11 @@ BuildPyPy() {
     RPM_BUILD_ROOT= \
     PYPY_USESSION_DIR=$(pwd) \
     PYPY_USESSION_BASENAME=$ExeName \
-    $INTERP translate.py \
-%if 0%{verbose_logs}
-    --translation-verbose \
-%endif
-    --cflags="$CFLAGS" \
-    --batch \
+    $INTERP ../../rpython/bin/rpython  \
     --output=$ExeName \
     %{gcrootfinder_options} \
-    $Options
+    $Options \
+    targetpypystandalone
 
   echo "--------------------------------------------------------------"
   echo "--------------------------------------------------------------"
@@ -559,7 +537,7 @@ BuildPyPy \
 %endif
 
 %if %{with_emacs}
-%{_emacs_bytecompile} pypy/jit/tool/pypytrace-mode.el
+%{_emacs_bytecompile} rpython/jit/tool/pypytrace-mode.el
 %endif
 
 %install
@@ -772,7 +750,7 @@ find \
 # Install the JIT trace mode for Emacs:
 %if %{with_emacs}
 mkdir -p %{buildroot}/%{_emacs_sitelispdir}
-cp -a pypy/jit/tool/pypytrace-mode.el* %{buildroot}/%{_emacs_sitelispdir}
+cp -a rpython/jit/tool/pypytrace-mode.el* %{buildroot}/%{_emacs_sitelispdir}
 %endif
 
 # Install macros for rpm:
@@ -908,7 +886,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files libs
 %defattr(-,root,root,-)
-%doc LICENSE README demo
+%doc LICENSE README.rst
 
 %dir %{pypyprefix}
 %dir %{pypyprefix}/lib-python
@@ -924,7 +902,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc LICENSE README
+%doc LICENSE README.rst
 %{_bindir}/pypy
 %{pypyprefix}/pypy
 
@@ -937,12 +915,15 @@ rm -rf $RPM_BUILD_ROOT
 %if 0%{with_stackless}
 %files stackless
 %defattr(-,root,root,-)
-%doc LICENSE README
+%doc LICENSE README.rst
 %{_bindir}/pypy-stackless
 %endif
 
 
 %changelog
+* Mon Jun 24 2013 Matej Stuchlik <mstuchli@redhat.com> - 2.0.2-1
+- 2.0.2, patch 8 does not seem necessary anymore
+
 * Thu Feb 14 2013 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.0-0.2.b1
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_19_Mass_Rebuild
 

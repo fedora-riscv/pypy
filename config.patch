@@ -1,7 +1,7 @@
-diff -up pypy-pypy-2346207d9946/pypy/translator/platform/linux.py.configure-fedora pypy-pypy-2346207d9946/pypy/translator/platform/linux.py
---- pypy-pypy-2346207d9946/pypy/translator/platform/linux.py.configure-fedora	2012-02-09 13:27:19.000000000 -0500
-+++ pypy-pypy-2346207d9946/pypy/translator/platform/linux.py	2012-02-10 09:06:20.393066016 -0500
-@@ -31,13 +31,14 @@ class BaseLinux(BasePosix):
+diff -rup pypy-pypy-f66246c46ca3/rpython/translator/platform/linux.py pypy-pypy-f66246c46ca3/rpython/translator/platform/linux.py
+--- pypy-pypy-f66246c46ca3/rpython/translator/platform/linux.py	2013-05-27 10:35:37.679237332 +0200
++++ pypy-pypy-f66246c46ca3/rpython/translator/platform/linux.py	2013-05-27 10:47:41.506354482 +0200
+@@ -32,19 +32,20 @@ class BaseLinux(BasePosix):
          return self._pkg_config("libffi", "--libs-only-L",
                                  ['/usr/lib/libffi'])
  
@@ -9,15 +9,27 @@ diff -up pypy-pypy-2346207d9946/pypy/translator/platform/linux.py.configure-fedo
 -        # places where we need to look for libffi.a
 -        # XXX obscuuure!  only look for libffi.a if run with translate.py
 -        if 'translate' in sys.modules:
--            return self.library_dirs_for_libffi() + ['/usr/lib']
+-            if sys.maxint > 2**32:
+-                host = 'x86_64'
+-            else:
+-                host = 'x86'
+-            return self.library_dirs_for_libffi() + [
+-                '/usr/lib',
+-                '/usr/lib/%s-linux-gnu/' % host]
 -        else:
 -            return []
-+    # Fedora, at least, has the shared version but not the static:
++    #Fedora, at least, has the shared version but not the static:
 +    #def library_dirs_for_libffi_a(self):
 +    #    # places where we need to look for libffi.a
 +    #    # XXX obscuuure!  only look for libffi.a if run with translate.py
 +    #    if 'translate' in sys.modules:
-+    #        return self.library_dirs_for_libffi() + ['/usr/lib']
++    #        if sys.maxint > 2**32:
++    #            host = 'x86_64'
++    #        else:
++    #            host = 'x86'
++    #        return self.library_dirs_for_libffi() + [
++    #            '/usr/lib',
++    #            '/usr/lib/%s-linux-gnu/' % host]
 +    #    else:
 +    #        return []
  
