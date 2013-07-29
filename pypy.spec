@@ -1,5 +1,7 @@
+%global alphatag b1
+
 Name:           pypy
-Version:        1.9
+Version:        2.0.2
 Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
@@ -121,7 +123,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %global pylibver 2.7
 
 # We refer to this subdir of the source tree in a few places during the build:
-%global goal_dir pypy/translator/goal
+%global goal_dir pypy/goal
 
 
 # Turn off the brp-python-bytecompile postprocessing script
@@ -130,7 +132,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0:        https://bitbucket.org/pypy/pypy/get/release-%{version}.tar.bz2
+Source0:	https://bitbucket.org/pypy/pypy/get/release-2.0.2.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
@@ -163,6 +165,18 @@ Patch4: more-readable-c-code.patch
 # executable
 # Not yet sent upstream
 Patch5: pypy-1.6-fix-test-subprocess-with-nonreadable-path-dir.patch
+
+# Patch pypy.translator.platform so that stdout from "make" etc gets logged,
+# rather than just stderr, so that the command-line invocations of the compiler
+# and linker are captured:
+Patch6: 006-always-log-stdout.patch
+
+# Disable the printing of a quote from IRC on startup (these are stored in
+# ROT13 form in lib_pypy/_pypy_irc_topic.py).  Some are cute, but some could
+# cause confusion for end-users (and many are in-jokes within the PyPy
+# community that won't make sense outside of it).  [Sorry to be a killjoy]
+Patch7: 007-remove-startup-message.patch
+
 
 # Build-time requirements:
 
@@ -320,7 +334,7 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%setup -q -n pypy-pypy-341e1e3821ff
+%setup -q -n pypy-pypy-f66246c46ca3
 %patch0 -p1 -b .configure-fedora
 %patch1 -p1 -b .suppress-mandelbrot-set-during-tty-build
 
@@ -358,6 +372,9 @@ Build of PyPy with support for micro-threads for massive concurrency
 #   [translation:ERROR]  AttributeError: 'Block' object has no attribute 'isstartblock'
 
 %patch5 -p1
+%patch6 -p1
+%patch7 -p1
+
 
 # Replace /usr/local/bin/python shebangs with /usr/bin/python:
 find -name "*.py" -exec \
@@ -375,9 +392,7 @@ find . -path '*/.svn*' -delete
 # Remove DOS batch files:
 find -name "*.bat"|xargs rm -f
 
-# The "demo" directory gets auto-installed by virture of being listed in %doc
-# Remove shebang lines from demo .py files, and remove executability from them:
-for f in demo/bpnn.py ; do
+for f in rpython/translator/goal/bpnn.py ; do
    # Detect shebang lines && remove them:
    sed -e '/^#!/Q 0' -e 'Q 1' $f \
       && sed -i '1d' $f
@@ -471,7 +486,7 @@ BuildPyPy() {
   # The generated C code leads to many thousands of warnings of the form:
   #   warning: variable 'l_v26003' set but not used [-Wunused-but-set-variable]
   # Suppress them:
-  export CFLAGS=$(echo "$CFLAGS" -Wno-unused)
+  export CFLAGS=$(echo "$CFLAGS" -Wno-unused -fPIC)
 
   # If we're already built the JIT-enabled "pypy", then use it for subsequent
   # builds (of other configurations):
@@ -489,15 +504,11 @@ BuildPyPy() {
     RPM_BUILD_ROOT= \
     PYPY_USESSION_DIR=$(pwd) \
     PYPY_USESSION_BASENAME=$ExeName \
-    $INTERP translate.py \
-%if 0%{verbose_logs}
-    --translation-verbose \
-%endif
-    --cflags="$CFLAGS" \
-    --batch \
+    $INTERP ../../rpython/bin/rpython  \
     --output=$ExeName \
     %{gcrootfinder_options} \
-    $Options
+    $Options \
+    targetpypystandalone
 
   echo "--------------------------------------------------------------"
   echo "--------------------------------------------------------------"
@@ -526,7 +537,7 @@ BuildPyPy \
 %endif
 
 %if %{with_emacs}
-%{_emacs_bytecompile} pypy/jit/tool/pypytrace-mode.el
+%{_emacs_bytecompile} rpython/jit/tool/pypytrace-mode.el
 %endif
 
 %install
@@ -592,6 +603,10 @@ cp -a lib_pypy %{buildroot}/%{pypyprefix}
 
 # Remove a text file that documents which selftests fail on Win32:
 rm %{buildroot}/%{pypyprefix}/lib-python/win32-failures.txt
+
+# Remove a text file containing upstream's recipe for syncing stdlib in
+# their hg repository with cpython's:
+rm %{buildroot}/%{pypyprefix}/lib-python/stdlib-upgrade.txt
 
 # Remove shebang lines from .py files that aren't executable, and
 # remove executability from .py files that don't have a shebang line:
@@ -696,14 +711,30 @@ mkdir -p %{buildroot}%{pypy_debuginfo_dir}
 # copy over everything:
 cp -a pypy %{buildroot}%{pypy_debuginfo_dir}
 
-# ...then delete files that aren't .py files:
+# ...then delete files that aren't:
+#   - *.py files
+#   - the Makefile
+#   - typeids.txt
+#   - dynamic-symbols-*
 find \
-  %{buildroot}%{pypy_debuginfo_dir} \
-  \( -type f                        \
-     -a                             \
-     \! -name "*.py"                \
-  \)                                \
+  %{buildroot}%{pypy_debuginfo_dir}  \
+  \( -type f                         \
+     -a                              \
+     \! \( -name "*.py"              \
+           -o                        \
+           -name "Makefile"          \
+           -o                        \
+           -name "typeids.txt"       \
+           -o                        \
+           -name "dynamic-symbols-*" \
+        \)                           \
+  \)                                 \
   -delete
+
+# Alternatively, we could simply keep everything.  This leads to a ~350MB
+# debuginfo package, but it makes it easy to hack on the Makefile and C build
+# flags by rebuilding/linking the sources.
+# To do so, remove the above "find" command.
 
 # We don't need bytecode for these files; they are being included for reference
 # purposes.
@@ -719,7 +750,7 @@ find \
 # Install the JIT trace mode for Emacs:
 %if %{with_emacs}
 mkdir -p %{buildroot}/%{_emacs_sitelispdir}
-cp -a pypy/jit/tool/pypytrace-mode.el* %{buildroot}/%{_emacs_sitelispdir}
+cp -a rpython/jit/tool/pypytrace-mode.el* %{buildroot}/%{_emacs_sitelispdir}
 %endif
 
 # Install macros for rpm:
@@ -855,7 +886,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files libs
 %defattr(-,root,root,-)
-%doc LICENSE README demo
+%doc LICENSE README.rst
 
 %dir %{pypyprefix}
 %dir %{pypyprefix}/lib-python
@@ -871,7 +902,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc LICENSE README
+%doc LICENSE README.rst
 %{_bindir}/pypy
 %{pypyprefix}/pypy
 
@@ -884,12 +915,15 @@ rm -rf $RPM_BUILD_ROOT
 %if 0%{with_stackless}
 %files stackless
 %defattr(-,root,root,-)
-%doc LICENSE README
+%doc LICENSE README.rst
 %{_bindir}/pypy-stackless
 %endif
 
 
 %changelog
+* Mon Jul 29 2013 Matej Stuchlik <mstuchli@redhat.com> - 2.0.2-1
+- 2.0.2
+
 * Fri Jun  8 2012 David Malcolm <dmalcolm@redhat.com> - 1.9-1
 - 1.9
 
