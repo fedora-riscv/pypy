@@ -1,7 +1,5 @@
-%global alphatag b1
-
 Name:           pypy
-Version:        2.0.2
+Version:        2.1.0
 Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
@@ -132,50 +130,28 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0:	https://bitbucket.org/pypy/pypy/get/release-2.0.2.tar.bz2
+Source0:	https://bitbucket.org/pypy/pypy/get/release-2.1.0.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
-Source2:        macros.pypy
-
-# Edit a translator file for linux in order to configure our cflags and dynamic libffi
-Patch0:         config.patch
+Source2: macros.pypy
 
 # By default, if built at a tty, the translation process renders a Mandelbrot
 # set to indicate progress.
 # This obscures useful messages, and may waste CPU cycles, so suppress it, and
 # merely render dots:
-Patch1:         pypy-1.2-suppress-mandelbrot-set-during-tty-build.patch
-
-# Try to improve the readability of the generated .c code, by adding in the
-# RPython source as comments where possible.
-# A version of this was sent upstream as:
-#  http://codespeak.net/pipermail/pypy-dev/2010q4/006532.html
-# TODO: get this into the upstream bug tracker, and finish inlining
-# support (rhbz#666963)
-Patch4: more-readable-c-code.patch
-
-# In my koji builds, /root/bin is in the PATH for some reason
-# This leads to test_subprocess.py failing, due to "test_leaking_fds_on_error"
-# trying every dir in PATH for "nonexisting_i_hope", which leads to it raising
-#  OSError: [Errno 13] Permission denied
-# when it tries to read /root/bin, rather than raising "No such file"
-#
-# Work around this by specifying an absolute path for the non-existant
-# executable
-# Not yet sent upstream
-Patch5: pypy-1.6-fix-test-subprocess-with-nonreadable-path-dir.patch
+Patch0: pypy-1.2-suppress-mandelbrot-set-during-tty-build.patch
 
 # Patch pypy.translator.platform so that stdout from "make" etc gets logged,
 # rather than just stderr, so that the command-line invocations of the compiler
 # and linker are captured:
-Patch6: 006-always-log-stdout.patch
+Patch1: 006-always-log-stdout.patch
 
 # Disable the printing of a quote from IRC on startup (these are stored in
 # ROT13 form in lib_pypy/_pypy_irc_topic.py).  Some are cute, but some could
 # cause confusion for end-users (and many are in-jokes within the PyPy
 # community that won't make sense outside of it).  [Sorry to be a killjoy]
-Patch7: 007-remove-startup-message.patch
+Patch2: 007-remove-startup-message.patch
 
 
 # Build-time requirements:
@@ -186,37 +162,7 @@ Patch7: 007-remove-startup-message.patch
 # Turn it off with this boolean, to revert back to rebuilding using CPython
 # and avoid a cycle in the build-time dependency graph:
 
-# I'm disabling the self-hosting for now, due to a fatal error seen inside the
-# JIT, presumably whilst JIT-compiling something within the translator's
-# inliner.
-# 
-# Specifically, building pypy-1.4.1-7.fc15.src.rpm on x86_64 using pypy-1.4.1-5.fc15.x86_64 
-#   http://koji.fedoraproject.org/koji/taskinfo?taskID=2721517
-# failed with this RPython traceback:
-#     ... snip ...
-#   [rtyper:WARNING] prebuilt instance <pypy.rpython.memory.gctransform.asmgcroot.ShapeDecompressor instance at 0x00000000f0b5bc80> has no attribute 'addr'
-#   [rtyper] specializing: 179300 / 180508 blocks   (99%)
-#   [rtyper] specializing: 180500 / 180566 blocks   (99%)
-#   [rtyper] -=- specialized 1363 more blocks -=-
-#   [rtyper] specializing: 180600 / 180777 blocks   (99%)
-#   [rtyper] -=- specialized 211 more blocks -=-
-#   [backendopt:inlining] phase with threshold factor: 32.4
-#   [backendopt:inlining] heuristic: pypy.translator.backendopt.inline.inlining_heuristic
-#   [x86/regalloc] Bogus arg in operation 76 at 0
-#   RPython traceback:
-#     File "implement_62.c", line 39979, in send_bridge_to_backend
-#     File "implement_69.c", line 65301, in Assembler386_assemble_bridge
-#     File "implement_72.c", line 8078, in RegAlloc_prepare_bridge
-#     File "implement_40.c", line 53061, in RegAlloc__prepare
-#     File "implement_44.c", line 14305, in RegAlloc__compute_vars_longevity
-#   Fatal RPython error: NotImplementedError
-#
-# This appears to be deep within pypy/jit/backend/x86/regalloc.py which has
-# called "not_implemented" to emit this message to stderr, before raising the
-# exception:
-#   [x86/regalloc] Bogus arg in operation 76 at 0
-
-%global use_self_when_building 0
+%global use_self_when_building 1
 %if 0%{use_self_when_building}
 BuildRequires: pypy
 %global bootstrap_python_interp pypy
@@ -234,12 +180,6 @@ BuildRequires: python-devel
 
 %endif
 
-
-# FIXME: I'm seeing errors like this in the logs:
-#   [translation:WARNING] The module '_rawffi' is disabled
-#   [translation:WARNING] because importing pypy.rlib.libffi raised ImportError
-#   [translation:WARNING] 'libffi.a' not found in ['/usr/lib/libffi', '/usr/lib']
-# Presumably we need to fix things to support dynamically-linked libffi
 BuildRequires:  libffi-devel
 
 BuildRequires:  zlib-devel
@@ -268,11 +208,6 @@ BuildRequires:  /usr/bin/execstack
 %if %{with_emacs}
 BuildRequires:  emacs
 %endif
-
-# pypy is bundling these so we delete them in %%prep.  I don't think they are
-# needed unless we build pypy targetted at running on the jvm.
-#BuildRequires:  jna
-#BuildRequires: jasmin  # Not yet in Fedora
 
 
 # Metadata for the core package (the JIT build):
@@ -334,47 +269,10 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%setup -q -n pypy-pypy-f66246c46ca3
-%patch0 -p1 -b .configure-fedora
-%patch1 -p1 -b .suppress-mandelbrot-set-during-tty-build
-
-# Disabled for now, as it needs regenerating for 1.8
-#patch4 -p1 -b .more-readable-c-code
-# Fails on 1.8 with this error:
-#   [translation:ERROR] Error:
-#   [translation:ERROR]  Traceback (most recent call last):
-#   [translation:ERROR]    File "translate.py", line 309, in main
-#   [translation:ERROR]     drv.proceed(goals)
-#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/driver.py", line 811, in proceed
-#   [translation:ERROR]     return self._execute(goals, task_skip = self._maybe_skip())
-#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/tool/taskengine.py", line 116, in _execute
-#   [translation:ERROR]     res = self._do(goal, taskcallable, *args, **kwds)
-#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/driver.py", line 287, in _do
-#   [translation:ERROR]     res = func()
-#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/driver.py", line 530, in task_source_c
-#   [translation:ERROR]     exe_name=exe_name)
-#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/genc.py", line 252, in generate_source
-#   [translation:ERROR]     split=self.split)
-#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/genc.py", line 989, in gen_source
-#   [translation:ERROR]     sg.gen_readable_parts_of_source(f)
-#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/genc.py", line 843, in gen_readable_parts_of_source
-#   [translation:ERROR]     for node, impl in nodeiter:
-#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/genc.py", line 729, in subiter
-#   [translation:ERROR]     impl = '\n'.join(list(node.implementation())).split('\n')
-#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/node.py", line 867, in implementation
-#   [translation:ERROR]     for s in self.funcgen_implementation(funcgen):
-#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/node.py", line 901, in funcgen_implementation
-#   [translation:ERROR]     for line in bodyiter:
-#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/funcgen.py", line 272, in cfunction_body
-#   [translation:ERROR]     blocks.sort(block_comparator)
-#   [translation:ERROR]    File "/builddir/build/BUILD/pypy-pypy-2346207d9946/pypy/translator/c/funcgen.py", line 34, in block_comparator
-#   [translation:ERROR]     if blk0.isstartblock:
-#   [translation:ERROR]  AttributeError: 'Block' object has no attribute 'isstartblock'
-
-%patch5 -p1
-%patch6 -p1
-%patch7 -p1
-
+%setup -q -n pypy-pypy-352c78d2e80f
+%patch0 -p1 -b .suppress-mandelbrot-set-during-tty-build
+%patch1 -p1
+%patch2 -p1
 
 # Replace /usr/local/bin/python shebangs with /usr/bin/python:
 find -name "*.py" -exec \
@@ -383,21 +281,13 @@ find -name "*.py" -exec \
     "{}" \
     \;
 
-find . -name '*.jar' -exec rm \{\} \;
-
-# Remove stray ".svn" directories present within the 1.4.1 tarball
-# (reported as https://codespeak.net/issue/pypy-dev/issue612 )
-find . -path '*/.svn*' -delete
-
-# Remove DOS batch files:
-find -name "*.bat"|xargs rm -f
-
 for f in rpython/translator/goal/bpnn.py ; do
    # Detect shebang lines && remove them:
    sed -e '/^#!/Q 0' -e 'Q 1' $f \
       && sed -i '1d' $f
    chmod a-x $f
 done
+
 
 %build
 
@@ -540,9 +430,9 @@ BuildPyPy \
 %{_emacs_bytecompile} rpython/jit/tool/pypytrace-mode.el
 %endif
 
+
 %install
 rm -rf $RPM_BUILD_ROOT
-
 
 # Install the various executables:
 
@@ -921,6 +811,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Aug 19 2013 Matej Stuchlik <mstuchli@redhat.com> - 2.1.0-1
+- Updated to 2.1.0
+
 * Mon Jun 24 2013 Matej Stuchlik <mstuchli@redhat.com> - 2.0.2-1
 - 2.0.2, patch 8 does not seem necessary anymore
 
