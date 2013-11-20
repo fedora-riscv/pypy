@@ -181,6 +181,10 @@ BuildRequires: python-devel
 %endif
 
 BuildRequires:  libffi-devel
+BuildRequires:  tcl-devel
+BuildRequires:  tk-devel
+
+BuildRequires:  sqlite-devel
 
 BuildRequires:  zlib-devel
 BuildRequires:  bzip2-devel
@@ -576,6 +580,11 @@ mkdir -p %{buildroot}/%{pypyprefix}/site-packages
 /usr/lib/rpm/brp-python-bytecompile \
   %{buildroot}/%{_bindir}/pypy \
   0
+
+%{goal_dir}/pypy -c 'import _tkinter'
+%{goal_dir}/pypy -c 'import _sqlite3'
+%{goal_dir}/pypy -c 'import _curses'
+%{goal_dir}/pypy -c 'import syslog'
 
 
 # Header files for C extension modules.
