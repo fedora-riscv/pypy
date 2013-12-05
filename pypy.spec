@@ -1,5 +1,5 @@
 Name:           pypy
-Version:        2.2.0
+Version:        2.2.1
 Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
@@ -130,7 +130,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0:	https://bitbucket.org/pypy/pypy/downloads/pypy-2.2-src.tar.bz2
+Source0:	https://bitbucket.org/pypy/pypy/downloads/pypy-2.2.1-src.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
@@ -273,7 +273,7 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%setup -q -n pypy-2.2-src
+%setup -q -n pypy-2.2.1-src
 %patch0 -p1 -b .suppress-mandelbrot-set-during-tty-build
 %patch1 -p1
 %patch2 -p1
@@ -769,6 +769,11 @@ CheckPyPy() {
     echo "--------------------------------------------------------------"
 }
 
+#python testrunner/runner.py --logfile=pytest-A.log --config=pypy/pytest-A.cfg --config=pypy/pytest-A.py --root=pypy --timeout=3600
+#python pypy/test_all.py --pypy=pypy/goal/pypy --timeout=3600 --resultlog=cpython.log lib-python
+#python pypy/test_all.py --pypy=pypy/goal/pypy --resultlog=pypyjit.log pypy/module/pypyjit/test
+#pypy/goal/pypy pypy/test_all.py --resultlog=pypyjit_new.log
+
 %if %{run_selftests}
 CheckPyPy pypy
 
@@ -820,10 +825,16 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Dec 05 2013 Matej Stuchlik <mstuchli@redhat.com> - 2.2.1-1
+- Updated to 2.2.1
+- Several bundled modules (tkinter, sqlite3, curses, syslog) were
+  not bytecompiled properly during build, that is now fixed
+- prepared new tests, not enabled yet
+
 * Thu Nov 14 2013 Matej Stuchlik <mstuchli@redhat.com> - 2.2.0-1
 - Updated to 2.2.0
 
-* Thu Aug 19 2013 Matej Stuchlik <mstuchli@redhat.com> - 2.1.0-1
+* Mon Aug 19 2013 Matej Stuchlik <mstuchli@redhat.com> - 2.1.0-1
 - Updated to 2.1.0
 
 * Mon Jun 24 2013 Matej Stuchlik <mstuchli@redhat.com> - 2.0.2-1
