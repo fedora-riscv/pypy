@@ -12,6 +12,8 @@ License:        MIT and Python and UCD
 URL:            http://pypy.org/
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
+ExcludeArch:    ppc64
+
 # High-level configuration of the build:
 
 # PyPy consists of an implementation of an interpreter (with JIT compilation)
