@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        2.2.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -581,11 +581,13 @@ mkdir -p %{buildroot}/%{pypyprefix}/site-packages
   %{buildroot}/%{_bindir}/pypy \
   0
 
-%{goal_dir}/pypy -c 'import _tkinter'
-%{goal_dir}/pypy -c 'import _sqlite3'
-%{goal_dir}/pypy -c 'import _curses'
-%{goal_dir}/pypy -c 'import syslog'
-
+%{buildroot}/%{pypyprefix}/pypy -c 'import _tkinter'
+%{buildroot}/%{pypyprefix}/pypy -c 'import Tkinter'
+%{buildroot}/%{pypyprefix}/pypy -c 'import _sqlite3'
+%{buildroot}/%{pypyprefix}/pypy -c 'import _curses'
+%{buildroot}/%{pypyprefix}/pypy -c 'import curses'
+%{buildroot}/%{pypyprefix}/pypy -c 'import syslog'
+%{buildroot}/%{pypyprefix}/pypy -c 'from _sqlite3 import *'
 
 # Header files for C extension modules.
 # Upstream's packaging process (pypy/tool/release/package.py)
@@ -825,6 +827,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Jan 16 2014 Matej Stuchlik <mstuchli@redhat.com> - 2.2.1-2
+- Fixed errors due to missing __pycache__
+
 * Thu Dec 05 2013 Matej Stuchlik <mstuchli@redhat.com> - 2.2.1-1
 - Updated to 2.2.1
 - Several bundled modules (tkinter, sqlite3, curses, syslog) were
