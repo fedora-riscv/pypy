@@ -655,8 +655,8 @@ cp -a rpython/jit/tool/pypytrace-mode.el* %{buildroot}/%{_emacs_sitelispdir}
 %endif
 
 # Install macros for rpm:
-mkdir -p %{buildroot}/%{_sysconfdir}/rpm
-install -m 644 %{SOURCE2} %{buildroot}/%{_sysconfdir}/rpm
+mkdir -p %{buildroot}/%{_rpmconfigdir}/macros.d
+install -m 644 %{SOURCE2} %{buildroot}/%{_rpmconfigdir}/macros.d
 
 %check
 topdir=$(pwd)
