@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        2.2.1
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -827,6 +827,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Mar 10 2014 Matej Stuchlik <mstuchli@redhat.com> - 2.2.1-3
+- Put RPM macros in proper location
+
 * Thu Jan 16 2014 Matej Stuchlik <mstuchli@redhat.com> - 2.2.1-2
 - Fixed errors due to missing __pycache__
 
