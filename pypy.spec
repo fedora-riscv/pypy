@@ -816,7 +816,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %dir %{pypy_include_dir}
 %{pypy_include_dir}/*.h
-%config(noreplace) %{_sysconfdir}/rpm/macros.pypy
+%config(noreplace) %{_rpmconfigdir}/macros.d/macros.pypy
 
 %if 0%{with_stackless}
 %files stackless
