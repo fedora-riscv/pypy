@@ -1,6 +1,6 @@
 Name:           pypy
-Version:        2.2.1
-Release:        3%{?dist}
+Version:        2.3
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -130,7 +130,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0:	https://bitbucket.org/pypy/pypy/downloads/pypy-2.2.1-src.tar.bz2
+Source0:	https://bitbucket.org/pypy/pypy/downloads/pypy-2.3-src.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
@@ -273,7 +273,7 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%setup -q -n pypy-2.2.1-src
+%setup -q -n pypy-pypy-394146e9bb67
 %patch0 -p1 -b .suppress-mandelbrot-set-during-tty-build
 %patch1 -p1
 %patch2 -p1
@@ -827,6 +827,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue May 13 2014 Matej Stuchlik <mstuchli@redhat.com> - 2.3-1
+- Updated to 2.3
+
 * Mon Mar 10 2014 Matej Stuchlik <mstuchli@redhat.com> - 2.2.1-3
 - Put RPM macros in proper location
 
