@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        2.3
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -827,6 +827,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed May 21 2014 Jaroslav Škarvada <jskarvad@redhat.com> - 2.3-3
+- Rebuilt for https://fedoraproject.org/wiki/Changes/f21tcl86
+
 * Thu May 15 2014 Matej Stuchlik <mstuchli@redhat.com> - 2.3-2
 - Rebuilt (f21-python)
 
