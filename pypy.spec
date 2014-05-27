@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        2.3
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -191,7 +191,7 @@ BuildRequires:  bzip2-devel
 BuildRequires:  ncurses-devel
 BuildRequires:  expat-devel
 BuildRequires:  openssl-devel
-%ifarch %{ix86} x86_64 ppc ppc64 s390x
+%ifnarch s390
 BuildRequires:  valgrind-devel
 %endif
 
@@ -827,6 +827,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue May 27 2014 Dennis Gilmore <dennis@ausil.us> - 2.3-4
+- valgrind is available everywhere except 31 bit s390
+
 * Wed May 21 2014 Jaroslav Škarvada <jskarvad@redhat.com> - 2.3-3
 - Rebuilt for https://fedoraproject.org/wiki/Changes/f21tcl86
 
