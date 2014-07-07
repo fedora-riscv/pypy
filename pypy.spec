@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        2.3.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -78,20 +78,20 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 #
 # Unfortunately, the JIT support is only available on some architectures.
 #
-# pypy-1.4/pypy/jit/backend/detect_cpu.py:getcpuclassname currently supports the
+# rpython/jit/backend/detect_cpu.py:getcpuclassname currently supports the
 # following options:
 #  'i386', 'x86'
 #  'x86-without-sse2':
 #  'x86_64'
+#  'armv6', 'armv7' (versions 6 and 7, hard- and soft-float ABI)
 #  'cli'
 #  'llvm'
 #
 # We will only build with JIT support on those architectures, and build without
 # it on the other archs.  The resulting binary will typically be slower than
 # CPython for the latter case.
-#
-%ifarch %{ix86} x86_64
-# FIXME: is there a better way of expressing "intel" here?
+
+%ifarch %{ix86} x86_64 %{arm}
 %global with_jit 1
 %else
 %global with_jit 0
@@ -206,7 +206,10 @@ BuildRequires:  time
 BuildRequires:  perl
 %endif
 
+# No prelink on these arches
+%ifnarch aarch64 ppc64le
 BuildRequires:  /usr/bin/execstack
+%endif
 
 # For byte-compiling the JIT-viewing mode:
 %if %{with_emacs}
@@ -466,7 +469,9 @@ InstallPyPy() {
     #
     # I tried various approaches involving fixing the build, but the simplest
     # approach is to postprocess the ELF file:
+%ifnarch aarch64 ppc64le
     execstack --clear-execstack %{buildroot}/%{pypyprefix}/$ExeName
+%endif
 }
 
 mkdir -p %{buildroot}/%{_bindir}
@@ -827,6 +832,10 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Mon Jul  7 2014 Peter Robinson <pbrobinson@fedoraproject.org> 2.3.1-2
+- ARMv7 is supported for JIT
+- no prelink on aarch64/ppc64le
+
 * Sun Jun 08 2014 Matej Stuchlik <mstuchli@redhat.com> - 2.3.1-1
 - Update to 2.3.1
 
