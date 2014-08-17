@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        2.3.1
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -832,6 +832,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Sun Aug 17 2014 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.3.1-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_21_22_Mass_Rebuild
+
 * Mon Jul  7 2014 Peter Robinson <pbrobinson@fedoraproject.org> 2.3.1-2
 - ARMv7 is supported for JIT
 - no prelink on aarch64/ppc64le
