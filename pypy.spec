@@ -250,10 +250,10 @@ Libraries required by the various PyPy implementations of Python.
 %package devel
 Group:    Development/Languages
 Summary:  Development tools for working with PyPy
+Requires: pypy = %{version}-%{release}
+
 %description devel
 Header files for building C extension modules against PyPy
-
-Requires: pypy = %{version}-%{release}
 
 
 %if 0%{with_stackless}
