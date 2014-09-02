@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        2.2.1
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -247,10 +247,10 @@ Libraries required by the various PyPy implementations of Python.
 %package devel
 Group:    Development/Languages
 Summary:  Development tools for working with PyPy
+Requires: pypy = %{version}-%{release}
+
 %description devel
 Header files for building C extension modules against PyPy
-
-Requires: pypy = %{version}-%{release}
 
 
 %if 0%{with_stackless}
@@ -827,6 +827,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed Sep 03 2014 Matej Stuchlik <mstuchli@redhat.com> - 2.2.1-3
+- Move devel subpackage requires so that it gets picked up by rpm
+
 * Thu Jan 16 2014 Matej Stuchlik <mstuchli@redhat.com> - 2.2.1-2
 - Fixed errors due to missing __pycache__
 
