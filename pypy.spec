@@ -1,6 +1,6 @@
 Name:           pypy
-Version:        2.3.1
-Release:        4%{?dist}
+Version:        2.4.0
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -130,7 +130,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0: https://bitbucket.org/pypy/pypy/get/release-2.3.1.tar.bz2
+Source0: https://bitbucket.org/pypy/pypy/downloads/pypy-2.4.0-src.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
@@ -276,7 +276,7 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%setup -q -n pypy-pypy-32f35069a16d
+%setup -q -n pypy-2.4.0-src
 %patch0 -p1 -b .suppress-mandelbrot-set-during-tty-build
 %patch1 -p1
 %patch2 -p1
@@ -294,6 +294,8 @@ for f in rpython/translator/goal/bpnn.py ; do
       && sed -i '1d' $f
    chmod a-x $f
 done
+
+rm -rf lib-python/3
 
 
 %build
@@ -832,6 +834,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed Sep 10 2014 Matej Stuchlik <mstuchli@redhat.com> - 2.4.0-1
+- Update to 2.4.0
+
 * Tue Sep 02 2014 Matej Stuchlik <mstuchli@redhat.com> - 2.3.1-4
 - Move devel subpackage requires so that it gets picked up by rpm
 
