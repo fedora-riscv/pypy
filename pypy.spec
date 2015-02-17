@@ -1,5 +1,5 @@
 Name:           pypy
-Version:        2.4.0
+Version:        2.5.0
 Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
@@ -130,7 +130,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0: https://bitbucket.org/pypy/pypy/downloads/pypy-2.4.0-src.tar.bz2
+Source0: https://bitbucket.org/pypy/pypy/downloads/pypy-2.5.0-src.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
@@ -276,7 +276,7 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%setup -q -n pypy-2.4.0-src
+%setup -q -n pypy-2.5.0-src
 %patch0 -p1 -b .suppress-mandelbrot-set-during-tty-build
 %patch1 -p1
 %patch2 -p1
@@ -460,6 +460,7 @@ InstallPyPy() {
     # This ought to enable our pypy build to work with virtualenv
     # (rhbz#742641)
     install -m 755 %{goal_dir}/$ExeName %{buildroot}/%{pypyprefix}/$ExeName
+    install -m 755 %{goal_dir}/libpypy.so %{buildroot}/%{pypyprefix}/libpypy.so
     ln -s %{pypyprefix}/$ExeName %{buildroot}/%{_bindir}
 
     # The generated machine code doesn't need an executable stack,  but
@@ -803,6 +804,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %dir %{pypyprefix}
 %dir %{pypyprefix}/lib-python
+%{pypyprefix}/libpypy.so
 %{pypyprefix}/lib-python/stdlib-version.txt
 %{pypyprefix}/lib-python/%{pylibver}/
 %{pypyprefix}/lib-python/conftest.py*
@@ -834,6 +836,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Tue Feb 17 2015 Matej Stuchlik <mstuchli@redhat.com> - 2.5.0-1
+- Update to 2.5.0
+
 * Wed Sep 10 2014 Matej Stuchlik <mstuchli@redhat.com> - 2.4.0-1
 - Update to 2.4.0
 
