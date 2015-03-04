@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        2.5.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -825,7 +825,7 @@ rm -rf $RPM_BUILD_ROOT
 %defattr(-,root,root,-)
 %dir %{pypy_include_dir}
 %{pypy_include_dir}/*.h
-%config(noreplace) %{_rpmconfigdir}/macros.d/macros.pypy
+%{_rpmconfigdir}/macros.d/macros.pypy
 
 %if 0%{with_stackless}
 %files stackless
@@ -836,6 +836,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed Mar  4 2015 Ville Skyttä <ville.skytta@iki.fi> - 2.5.0-2
+- Do not mark macros file as %%config (#1074266)
+
 * Tue Feb 17 2015 Matej Stuchlik <mstuchli@redhat.com> - 2.5.0-1
 - Update to 2.5.0
 
