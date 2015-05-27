@@ -130,7 +130,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0: https://bitbucket.org/pypy/pypy/downloads/pypy-2.5.0-src.tar.bz2
+Source0: https://bitbucket.org/pypy/pypy/downloads/pypy-%{version}-src.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
@@ -276,7 +276,7 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%setup -q -n pypy-2.5.0-src
+%setup -q -n pypy-%{version}-src
 %patch0 -p1 -b .suppress-mandelbrot-set-during-tty-build
 %patch1 -p1
 %patch2 -p1
