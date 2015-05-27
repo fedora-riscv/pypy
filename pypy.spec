@@ -1,6 +1,6 @@
 Name:           pypy
-Version:        2.5.0
-Release:        2%{?dist}
+Version:        2.6.0
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -836,6 +836,9 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Wed May 27 2015 Matej Stuchlik <mstuchli@redhat.com> - 2.6.0-1
+- Update to 2.6.0
+
 * Wed Mar  4 2015 Ville Skyttä <ville.skytta@iki.fi> - 2.5.0-2
 - Do not mark macros file as %%config (#1074266)
 
