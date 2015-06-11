@@ -10,7 +10,6 @@ Group:          Development/Languages
 # licensing terms
 License:        MIT and Python and UCD
 URL:            http://pypy.org/
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 # High-level configuration of the build:
 
@@ -117,7 +116,7 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 # Easy way to turn off the selftests:
 %global run_selftests 1
 
-%global pypyprefix %{_libdir}/pypy-%{version}
+%global pypyprefix %{_libdir}/%{name}-%{version}
 %global pylibver 2.7
 
 # We refer to this subdir of the source tree in a few places during the build:
@@ -130,11 +129,11 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0: https://bitbucket.org/pypy/pypy/downloads/pypy-%{version}-src.tar.bz2
+Source0: https://bitbucket.org/pypy/pypy/downloads/%{name}-%{version}-src.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
-Source2: macros.pypy
+Source2: macros.%{name}
 
 # By default, if built at a tty, the translation process renders a Mandelbrot
 # set to indicate progress.
@@ -216,9 +215,11 @@ BuildRequires:  /usr/bin/execstack
 BuildRequires:  emacs
 %endif
 
+# For %%autosetup -S git
+BuildRequires:  git
 
 # Metadata for the core package (the JIT build):
-Requires: pypy-libs = %{version}-%{release}
+Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 
 %description
 PyPy's implementation of Python, featuring a Just-In-Time compiler on some CPU
@@ -250,7 +251,7 @@ Libraries required by the various PyPy implementations of Python.
 %package devel
 Group:    Development/Languages
 Summary:  Development tools for working with PyPy
-Requires: pypy = %{version}-%{release}
+Requires: %{name}%{?_isa} = %{version}-%{release}
 
 %description devel
 Header files for building C extension modules against PyPy
@@ -260,26 +261,14 @@ Header files for building C extension modules against PyPy
 %package stackless
 Group:    Development/Languages
 Summary:  Stackless Python interpreter built using PyPy
-Requires: pypy-libs = %{version}-%{release}
-%description stackless
-Build of PyPy with support for micro-threads for massive concurrency
-%endif
-
-%if 0%{with_stackless}
-%package stackless
-Group:    Development/Languages
-Summary:  Stackless Python interpreter built using PyPy
-Requires: pypy-libs = %{version}-%{release}
+Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 %description stackless
 Build of PyPy with support for micro-threads for massive concurrency
 %endif
 
 
 %prep
-%setup -q -n pypy-%{version}-src
-%patch0 -p1 -b .suppress-mandelbrot-set-during-tty-build
-%patch1 -p1
-%patch2 -p1
+%autosetup -n %{name}-%{version}-src -p1 -S git
 
 # Replace /usr/local/bin/python shebangs with /usr/bin/python:
 find -name "*.py" -exec \
@@ -297,6 +286,11 @@ done
 
 rm -rf lib-python/3
 
+# Replace all lib-python python shebangs with pypy
+find lib-python/%{pylibver} -name "*.py" -exec \
+  sed -r -i '1s|^#!\s*/usr/bin.*python.*|#!/usr/bin/%{name}|' \
+    "{}" \
+    \;
 
 %build
 
@@ -357,14 +351,14 @@ BuildPyPy() {
   # This is the most portable option, and avoids a reliance on non-guaranteed
   # behaviors within GCC's code generator: use an explicitly-maintained stack
   # of root pointers:
-  %define gcrootfinder_options --gcrootfinder=shadowstack
+  %global gcrootfinder_options --gcrootfinder=shadowstack
 
   export CFLAGS=$(echo "$RPM_OPT_FLAGS")
 
 %else
   # Go with the default, which is "asmgcc"
 
-  %define gcrootfinder_options %{nil}
+  %global gcrootfinder_options %{nil}
 
   # https://bugzilla.redhat.com/show_bug.cgi?id=588941#c18
   # The generated Makefile compiles the .c files into assembler (.s), rather
@@ -421,7 +415,7 @@ BuildPyPy() {
 }
 
 BuildPyPy \
-  pypy \
+  %{name} \
 %if 0%{with_jit}
   "-Ojit" \
 %else
@@ -431,7 +425,7 @@ BuildPyPy \
 
 %if 0%{with_stackless}
 BuildPyPy \
-  pypy-stackless \
+  %{name}-stackless \
    "--stackless"
 %endif
 
@@ -441,8 +435,6 @@ BuildPyPy \
 
 
 %install
-rm -rf $RPM_BUILD_ROOT
-
 # Install the various executables:
 
 InstallPyPy() {
@@ -480,10 +472,10 @@ InstallPyPy() {
 mkdir -p %{buildroot}/%{_bindir}
 mkdir -p %{buildroot}/%{pypyprefix}
 
-InstallPyPy pypy
+InstallPyPy %{name}
 
 %if 0%{with_stackless}
-InstallPyPy pypy-stackless
+InstallPyPy %{name}-stackless
 %endif
 
 
@@ -586,16 +578,16 @@ mkdir -p %{buildroot}/%{pypyprefix}/site-packages
 # Note that some of the test files deliberately contain syntax errors, so
 # we pass 0 for the second argument ("errors_terminate"):
 /usr/lib/rpm/brp-python-bytecompile \
-  %{buildroot}/%{_bindir}/pypy \
+  %{buildroot}/%{_bindir}/%{name} \
   0
 
-%{buildroot}/%{pypyprefix}/pypy -c 'import _tkinter'
-%{buildroot}/%{pypyprefix}/pypy -c 'import Tkinter'
-%{buildroot}/%{pypyprefix}/pypy -c 'import _sqlite3'
-%{buildroot}/%{pypyprefix}/pypy -c 'import _curses'
-%{buildroot}/%{pypyprefix}/pypy -c 'import curses'
-%{buildroot}/%{pypyprefix}/pypy -c 'import syslog'
-%{buildroot}/%{pypyprefix}/pypy -c 'from _sqlite3 import *'
+%{buildroot}/%{pypyprefix}/%{name} -c 'import _tkinter'
+%{buildroot}/%{pypyprefix}/%{name} -c 'import Tkinter'
+%{buildroot}/%{pypyprefix}/%{name} -c 'import _sqlite3'
+%{buildroot}/%{pypyprefix}/%{name} -c 'import _curses'
+%{buildroot}/%{pypyprefix}/%{name} -c 'import curses'
+%{buildroot}/%{pypyprefix}/%{name} -c 'import syslog'
+%{buildroot}/%{pypyprefix}/%{name} -c 'from _sqlite3 import *'
 
 # Header files for C extension modules.
 # Upstream's packaging process (pypy/tool/release/package.py)
@@ -659,12 +651,16 @@ find \
 # Install the JIT trace mode for Emacs:
 %if %{with_emacs}
 mkdir -p %{buildroot}/%{_emacs_sitelispdir}
-cp -a rpython/jit/tool/pypytrace-mode.el* %{buildroot}/%{_emacs_sitelispdir}
+cp -a rpython/jit/tool/pypytrace-mode.el %{buildroot}/%{_emacs_sitelispdir}/%{name}trace-mode.el
+cp -a rpython/jit/tool/pypytrace-mode.elc %{buildroot}/%{_emacs_sitelispdir}/%{name}trace-mode.elc
 %endif
 
 # Install macros for rpm:
 mkdir -p %{buildroot}/%{_rpmconfigdir}/macros.d
 install -m 644 %{SOURCE2} %{buildroot}/%{_rpmconfigdir}/macros.d
+
+# Remove build script from the package
+rm %{buildroot}/%{pypyprefix}/lib_pypy/ctypes_config_cache/rebuild.py
 
 %check
 topdir=$(pwd)
@@ -695,7 +691,7 @@ CheckPyPy() {
 
     # Use regrtest to explicitly list all tests:
     ( ./$ExeName -c \
-         "from test.regrtest import findtests; print '\n'.join(findtests())"
+         "from test.regrtest import findtests; print('\n'.join(findtests()))"
     ) > testnames.txt
 
     # Skip some tests:
@@ -785,22 +781,22 @@ CheckPyPy() {
 #pypy/goal/pypy pypy/test_all.py --resultlog=pypyjit_new.log
 
 %if %{run_selftests}
-CheckPyPy pypy
+CheckPyPy %{name}
 
 %if 0%{with_stackless}
-CheckPyPy pypy-stackless
+CheckPyPy %{name}-stackless
 %endif
 
 %endif # run_selftests
 
-
-%clean
-rm -rf $RPM_BUILD_ROOT
-
+# Because there's a bunch of binary subpackages and creating
+# /usr/share/licenses/pypy3-this and /usr/share/licenses/pypy3-that
+# is just confusing for the user.
+%global _docdir_fmt %{name}
 
 %files libs
-%defattr(-,root,root,-)
-%doc LICENSE README.rst
+%license LICENSE
+%doc README.rst
 
 %dir %{pypyprefix}
 %dir %{pypyprefix}/lib-python
@@ -811,27 +807,26 @@ rm -rf $RPM_BUILD_ROOT
 %{pypyprefix}/lib_pypy/
 %{pypyprefix}/site-packages/
 %if %{with_emacs}
-%{_emacs_sitelispdir}/pypytrace-mode.el
-%{_emacs_sitelispdir}/pypytrace-mode.elc
+%{_emacs_sitelispdir}/%{name}trace-mode.el
+%{_emacs_sitelispdir}/%{name}trace-mode.elc
 %endif
 
 %files
-%defattr(-,root,root,-)
-%doc LICENSE README.rst
-%{_bindir}/pypy
-%{pypyprefix}/pypy
+%license LICENSE
+%doc README.rst
+%{_bindir}/%{name}
+%{pypyprefix}/%{name}
 
 %files devel
-%defattr(-,root,root,-)
 %dir %{pypy_include_dir}
 %{pypy_include_dir}/*.h
-%{_rpmconfigdir}/macros.d/macros.pypy
+%{_rpmconfigdir}/macros.d/macros.%{name}
 
 %if 0%{with_stackless}
 %files stackless
-%defattr(-,root,root,-)
-%doc LICENSE README.rst
-%{_bindir}/pypy-stackless
+%license LICENSE
+%doc README.rst
+%{_bindir}/%{name}-stackless
 %endif
 
 
