@@ -152,6 +152,8 @@ Patch1: 006-always-log-stdout.patch
 # community that won't make sense outside of it).  [Sorry to be a killjoy]
 Patch2: 007-remove-startup-message.patch
 
+# Fix bug in pypy installing script package.py
+Patch3: pypy_tool_release_package.patch
 
 # Build-time requirements:
 
@@ -161,7 +163,7 @@ Patch2: 007-remove-startup-message.patch
 # Turn it off with this boolean, to revert back to rebuilding using CPython
 # and avoid a cycle in the build-time dependency graph:
 
-%global use_self_when_building 0
+%global use_self_when_building 1
 %if 0%{use_self_when_building}
 BuildRequires: pypy
 %global bootstrap_python_interp pypy
@@ -190,6 +192,7 @@ BuildRequires:  bzip2-devel
 BuildRequires:  ncurses-devel
 BuildRequires:  expat-devel
 BuildRequires:  openssl-devel
+BuildRequires:  chrpath
 %ifnarch s390
 BuildRequires:  valgrind-devel
 %endif
@@ -205,9 +208,10 @@ BuildRequires:  time
 BuildRequires:  perl
 %endif
 
+
 # No prelink on these arches
 %ifnarch aarch64 ppc64le
-BuildRequires:  /usr/bin/execstack
+#BuildRequires:  /usr/bin/execstack
 %endif
 
 # For byte-compiling the JIT-viewing mode:
@@ -268,8 +272,11 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%autosetup -n %{name}-%{version}-src -p1 -S git
-
+%setup -n %{name}-%{version}-src
+%patch0 -p1
+%patch1 -p1
+%patch2 -p1
+%patch3 -p1
 # Replace /usr/local/bin/python shebangs with /usr/bin/python:
 find -name "*.py" -exec \
   sed \
@@ -393,15 +400,13 @@ BuildPyPy() {
   fi
 
   # Here's where we actually invoke the build:
-  time \
-    RPM_BUILD_ROOT= \
-    PYPY_USESSION_DIR=$(pwd) \
-    PYPY_USESSION_BASENAME=$ExeName \
-    $INTERP ../../rpython/bin/rpython  \
-    --output=$ExeName \
-    %{gcrootfinder_options} \
-    $Options \
-    targetpypystandalone
+  RPM_BUILD_ROOT= \
+  PYPY_USESSION_DIR=$(pwd) \
+  PYPY_USESSION_BASENAME=$ExeName \
+  $INTERP ../../rpython/bin/rpython  \
+  %{gcrootfinder_options} \
+  $Options \
+  targetpypystandalone
 
   echo "--------------------------------------------------------------"
   echo "--------------------------------------------------------------"
@@ -437,8 +442,8 @@ BuildPyPy \
 %install
 # Install the various executables:
 
-InstallPyPy() {
-    ExeName=$1
+#InstallPyPy() {
+#    ExeName=$1
 
     # To ensure compatibility with virtualenv, pypy finds its libraries
     # relative to itself; this happens within
@@ -451,9 +456,10 @@ InstallPyPy() {
     #
     # This ought to enable our pypy build to work with virtualenv
     # (rhbz#742641)
-    install -m 755 %{goal_dir}/$ExeName %{buildroot}/%{pypyprefix}/$ExeName
-    install -m 755 %{goal_dir}/libpypy.so %{buildroot}/%{pypyprefix}/libpypy.so
-    ln -s %{pypyprefix}/$ExeName %{buildroot}/%{_bindir}
+    
+    #install -m 755 %{goal_dir}/$ExeName-c %{buildroot}/%{pypyprefix}/$ExeName
+    #install -m 755 %{goal_dir}/libpypy-c.so %{buildroot}/%{pypyprefix}/libpypy-c.so
+    #ln -s %{pypyprefix}/$ExeName %{buildroot}/%{_bindir}
 
     # The generated machine code doesn't need an executable stack,  but
     # one of the assembler files (gcmaptable.s) doesn't have the necessary
@@ -464,19 +470,19 @@ InstallPyPy() {
     #
     # I tried various approaches involving fixing the build, but the simplest
     # approach is to postprocess the ELF file:
-%ifnarch aarch64 ppc64le
-    execstack --clear-execstack %{buildroot}/%{pypyprefix}/$ExeName
-%endif
-}
+#%ifnarch aarch64 ppc64le
+#    execstack --clear-execstack %{buildroot}/%{pypyprefix}/$ExeName
+#%endif
+#}
 
 mkdir -p %{buildroot}/%{_bindir}
 mkdir -p %{buildroot}/%{pypyprefix}
 
-InstallPyPy %{name}
+#InstallPyPy %{name}
 
-%if 0%{with_stackless}
-InstallPyPy %{name}-stackless
-%endif
+#%if 0%{with_stackless}
+#InstallPyPy %{name}-stackless
+#%endif
 
 
 # Install the various support libraries as described at:
@@ -491,34 +497,34 @@ InstallPyPy %{name}-stackless
 #   PREFIX/lib-python/modified.2.5.2
 # as given on the above page, i.e. it uses '-' not '.'
 
-cp -a lib-python %{buildroot}/%{pypyprefix}
+#cp -a lib-python %{buildroot}/%{pypyprefix}
 
-cp -a lib_pypy %{buildroot}/%{pypyprefix}
+#cp -a lib_pypy %{buildroot}/%{pypyprefix}
 
 # Remove a text file that documents which selftests fail on Win32:
-rm %{buildroot}/%{pypyprefix}/lib-python/win32-failures.txt
+#rm %{buildroot}/%{pypyprefix}/lib-python/win32-failures.txt
 
 # Remove a text file containing upstream's recipe for syncing stdlib in
 # their hg repository with cpython's:
-rm %{buildroot}/%{pypyprefix}/lib-python/stdlib-upgrade.txt
+#rm %{buildroot}/%{pypyprefix}/lib-python/stdlib-upgrade.txt
 
 # Remove shebang lines from .py files that aren't executable, and
 # remove executability from .py files that don't have a shebang line:
-find \
-  %{buildroot}                                                           \
-  -name "*.py"                                                           \
-    \(                                                                   \
-       \( \! -perm /u+x,g+x,o+x -exec sed -e '/^#!/Q 0' -e 'Q 1' {} \;   \
-             -print -exec sed -i '1d' {} \;                              \
-          \)                                                             \
-       -o                                                                \
-       \(                                                                \
-             -perm /u+x,g+x,o+x ! -exec grep -m 1 -q '^#!' {} \;         \
-             -exec chmod a-x {} \;                                       \
-        \)                                                               \
-    \)
+#find \
+#  %{buildroot}                                                           \
+#  -name "*.py"                                                           \
+#    \(                                                                   \
+#       \( \! -perm /u+x,g+x,o+x -exec sed -e '/^#!/Q 0' -e 'Q 1' {} \;   \
+#             -print -exec sed -i '1d' {} \;                              \
+#          \)                                                             \
+#       -o                                                                \
+#       \(                                                                \
+#             -perm /u+x,g+x,o+x ! -exec grep -m 1 -q '^#!' {} \;         \
+#             -exec chmod a-x {} \;                                       \
+#        \)                                                               \
+#    \)
 
-mkdir -p %{buildroot}/%{pypyprefix}/site-packages
+#mkdir -p %{buildroot}/%{pypyprefix}/site-packages
 
 
 # pypy uses .pyc files by default (--objspace-usepycfiles), but has a slightly
@@ -577,17 +583,20 @@ mkdir -p %{buildroot}/%{pypyprefix}/site-packages
 #
 # Note that some of the test files deliberately contain syntax errors, so
 # we pass 0 for the second argument ("errors_terminate"):
-/usr/lib/rpm/brp-python-bytecompile \
-  %{buildroot}/%{_bindir}/%{name} \
-  0
+#/usr/lib/rpm/brp-python-bytecompile \
+#  %{buildroot}/%{_bindir}/%{name} \
+#  0
 
-%{buildroot}/%{pypyprefix}/%{name} -c 'import _tkinter'
-%{buildroot}/%{pypyprefix}/%{name} -c 'import Tkinter'
-%{buildroot}/%{pypyprefix}/%{name} -c 'import _sqlite3'
-%{buildroot}/%{pypyprefix}/%{name} -c 'import _curses'
-%{buildroot}/%{pypyprefix}/%{name} -c 'import curses'
-%{buildroot}/%{pypyprefix}/%{name} -c 'import syslog'
-%{buildroot}/%{pypyprefix}/%{name} -c 'from _sqlite3 import *'
+#%{buildroot}/%{pypyprefix}/%{name} -c 'import _tkinter'
+#%{buildroot}/%{pypyprefix}/%{name} -c 'import Tkinter'
+#%{buildroot}/%{pypyprefix}/%{name} -c 'import _sqlite3'
+#%{buildroot}/%{pypyprefix}/%{name} -c 'import _curses'
+#%{buildroot}/%{pypyprefix}/%{name} -c 'import curses'
+#%{buildroot}/%{pypyprefix}/%{name} -c 'import syslog'
+#archive-name%{buildroot}/%{pypyprefix}/%{name} -c 'from _sqlite3 import *'
+
+# Makes dir %{name}-%{version} in %{buildroot}/%{_libdir} == %{pypyprefix} 
+%{__python} pypy/tool/release/package.py --without-gdbm --archive-name %{name}-%{version} --builddir %{buildroot}/%{_libdir}
 
 # Header files for C extension modules.
 # Upstream's packaging process (pypy/tool/release/package.py)
@@ -600,37 +609,37 @@ mkdir -p %{buildroot}/%{pypyprefix}/site-packages
 # it's not yet clear to me how upstream plan to deal with the C extension
 # interface going forward, so let's just mimic upstream for now.
 %global pypy_include_dir  %{pypyprefix}/include
-mkdir -p %{buildroot}/%{pypy_include_dir}
-cp include/*.h %{buildroot}/%{pypy_include_dir}
+#mkdir -p %{buildroot}/%{pypy_include_dir}
+#cp include/*.h %{buildroot}/%{pypy_include_dir}
 
 
 # Capture the RPython source code files from the build within the debuginfo
 # package (rhbz#666975)
-%global pypy_debuginfo_dir /usr/src/debug/pypy-%{version}-src
-mkdir -p %{buildroot}%{pypy_debuginfo_dir}
+#%global pypy_debuginfo_dir /usr/src/debug/pypy-%{version}-src
+#mkdir -p %{buildroot}%{pypy_debuginfo_dir}
 
 # copy over everything:
-cp -a pypy %{buildroot}%{pypy_debuginfo_dir}
+#cp -a pypy %{buildroot}%{pypy_debuginfo_dir}
 
 # ...then delete files that aren't:
 #   - *.py files
 #   - the Makefile
 #   - typeids.txt
 #   - dynamic-symbols-*
-find \
-  %{buildroot}%{pypy_debuginfo_dir}  \
-  \( -type f                         \
-     -a                              \
-     \! \( -name "*.py"              \
-           -o                        \
-           -name "Makefile"          \
-           -o                        \
-           -name "typeids.txt"       \
-           -o                        \
-           -name "dynamic-symbols-*" \
-        \)                           \
-  \)                                 \
-  -delete
+#find \
+#  %{buildroot}%{pypy_debuginfo_dir}  \
+#  \( -type f                         \
+#     -a                              \
+#     \! \( -name "*.py"              \
+#           -o                        \
+#           -name "Makefile"          \
+#           -o                        \
+#           -name "typeids.txt"       \
+#           -o                        \
+#           -name "dynamic-symbols-*" \
+#        \)                           \
+#  \)                                 \
+#  -delete
 
 # Alternatively, we could simply keep everything.  This leads to a ~350MB
 # debuginfo package, but it makes it easy to hack on the Makefile and C build
@@ -655,12 +664,25 @@ cp -a rpython/jit/tool/pypytrace-mode.el %{buildroot}/%{_emacs_sitelispdir}/%{na
 cp -a rpython/jit/tool/pypytrace-mode.elc %{buildroot}/%{_emacs_sitelispdir}/%{name}trace-mode.elc
 %endif
 
+# Move files to the right places and remove unnecessary files
+mkdir %{buildroot}/%{_includedir}
+mv %{buildroot}/%{pypy_include_dir}/*.h %{buildroot}/%{_includedir}
+mv %{buildroot}/%{pypy_include_dir}/numpy/ %{buildroot}/%{_includedir}
+ln -sf %{pypyprefix}/bin/%{name} %{buildroot}/%{_bindir}/%{name}
+mv %{buildroot}/%{pypyprefix}/bin/libpypy-c.so %{buildroot}/%{_libdir}
+rm -rf %{buildroot}/%{_libdir}/%{name}-%{version}.tar.bz2
+rm -rf %{buildroot}/%{pypyprefix}/LICENSE
+rm -rf %{buildroot}/%{pypyprefix}/README.rst
+rm -rf %{buildroot}/%{pypyprefix}/README.rst
+rm -rf %{buildroot}/%{pypy_include_dir}
+chrpath --delete %{buildroot}/%{pypyprefix}/bin/%{name}
+
 # Install macros for rpm:
 mkdir -p %{buildroot}/%{_rpmconfigdir}/macros.d
 install -m 644 %{SOURCE2} %{buildroot}/%{_rpmconfigdir}/macros.d
 
 # Remove build script from the package
-rm %{buildroot}/%{pypyprefix}/lib_pypy/ctypes_config_cache/rebuild.py
+#rm %{buildroot}/%{pypyprefix}/lib_pypy/ctypes_config_cache/rebuild.py
 
 %check
 topdir=$(pwd)
@@ -781,10 +803,10 @@ CheckPyPy() {
 #pypy/goal/pypy pypy/test_all.py --resultlog=pypyjit_new.log
 
 %if %{run_selftests}
-CheckPyPy %{name}
+CheckPyPy %{name}-c
 
 %if 0%{with_stackless}
-CheckPyPy %{name}-stackless
+CheckPyPy %{name}-c-stackless
 %endif
 
 %endif # run_selftests
@@ -800,10 +822,8 @@ CheckPyPy %{name}-stackless
 
 %dir %{pypyprefix}
 %dir %{pypyprefix}/lib-python
-%{pypyprefix}/libpypy.so
-%{pypyprefix}/lib-python/stdlib-version.txt
+%{_libdir}/libpypy-c.so
 %{pypyprefix}/lib-python/%{pylibver}/
-%{pypyprefix}/lib-python/conftest.py*
 %{pypyprefix}/lib_pypy/
 %{pypyprefix}/site-packages/
 %if %{with_emacs}
@@ -815,11 +835,12 @@ CheckPyPy %{name}-stackless
 %license LICENSE
 %doc README.rst
 %{_bindir}/%{name}
-%{pypyprefix}/%{name}
+%{pypyprefix}/bin/%{name}
 
 %files devel
-%dir %{pypy_include_dir}
-%{pypy_include_dir}/*.h
+%dir %{_includedir}
+%{_includedir}/*.h
+%{_includedir}/numpy/*.h
 %{_rpmconfigdir}/macros.d/macros.%{name}
 
 %if 0%{with_stackless}
