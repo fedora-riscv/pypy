@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        2.6.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -116,6 +116,7 @@ URL:            http://pypy.org/
 # Easy way to turn off the selftests:
 %global run_selftests 1
 
+%global pypy_include_dir  %{pypyprefix}/include
 %global pypyprefix %{_libdir}/%{name}-%{version}
 %global pylibver 2.7
 
@@ -211,16 +212,13 @@ BuildRequires:  perl
 
 # No prelink on these arches
 %ifnarch aarch64 ppc64le
-#BuildRequires:  /usr/bin/execstack
+BuildRequires:  /usr/bin/execstack
 %endif
 
 # For byte-compiling the JIT-viewing mode:
 %if %{with_emacs}
 BuildRequires:  emacs
 %endif
-
-# For %%autosetup -S git
-BuildRequires:  git
 
 # Metadata for the core package (the JIT build):
 Requires: %{name}-libs%{?_isa} = %{version}-%{release}
@@ -440,163 +438,38 @@ BuildPyPy \
 
 
 %install
-# Install the various executables:
-
-#InstallPyPy() {
-#    ExeName=$1
-
-    # To ensure compatibility with virtualenv, pypy finds its libraries
-    # relative to itself; this happens within
-    #    pypy/translator/goal/app_main.py:get_library_path
-    # which calls sys.pypy_initial_path(dirname) on the dir containing
-    # the executable, with symlinks resolved.
-    #
-    # Hence we make /usr/bin/pypy be a symlink to the real binary, which we
-    # place within /usr/lib[64]/pypy-1.* as pypy
-    #
-    # This ought to enable our pypy build to work with virtualenv
-    # (rhbz#742641)
-    
-    #install -m 755 %{goal_dir}/$ExeName-c %{buildroot}/%{pypyprefix}/$ExeName
-    #install -m 755 %{goal_dir}/libpypy-c.so %{buildroot}/%{pypyprefix}/libpypy-c.so
-    #ln -s %{pypyprefix}/$ExeName %{buildroot}/%{_bindir}
-
-    # The generated machine code doesn't need an executable stack,  but
-    # one of the assembler files (gcmaptable.s) doesn't have the necessary
-    # metadata to inform gcc of that, and thus gcc pessimistically assumes
-    # that the built binary does need an executable stack.
-    #
-    # Reported upstream as: https://codespeak.net/issue/pypy-dev/issue610
-    #
-    # I tried various approaches involving fixing the build, but the simplest
-    # approach is to postprocess the ELF file:
-#%ifnarch aarch64 ppc64le
-#    execstack --clear-execstack %{buildroot}/%{pypyprefix}/$ExeName
-#%endif
-#}
 
 mkdir -p %{buildroot}/%{_bindir}
 mkdir -p %{buildroot}/%{pypyprefix}
-
-#InstallPyPy %{name}
 
 #%if 0%{with_stackless}
 #InstallPyPy %{name}-stackless
 #%endif
 
 
-# Install the various support libraries as described at:
-#   http://codespeak.net/pypy/dist/pypy/doc/getting-started-python.html#installation
-# which refers to a "PREFIX" found relative to the location of the binary.
-# Given that the pypy binaries will be in /usr/bin, PREFIX can be
-# "../share/pypy-1.2" relative to that directory, i.e. /usr/share/pypy-1.2
-# 
-# Running "strace" on a built binary indicates that it searches within
-#   PREFIX/lib-python/modified-2.5.2
-# not
-#   PREFIX/lib-python/modified.2.5.2
-# as given on the above page, i.e. it uses '-' not '.'
-
-#cp -a lib-python %{buildroot}/%{pypyprefix}
-
-#cp -a lib_pypy %{buildroot}/%{pypyprefix}
-
-# Remove a text file that documents which selftests fail on Win32:
-#rm %{buildroot}/%{pypyprefix}/lib-python/win32-failures.txt
-
-# Remove a text file containing upstream's recipe for syncing stdlib in
-# their hg repository with cpython's:
-#rm %{buildroot}/%{pypyprefix}/lib-python/stdlib-upgrade.txt
+# Run installing script,  archive-name  %{name}-%{version} in %{buildroot}/%{_libdir} == %{pypyprefix} 
+%{__python} pypy/tool/release/package.py --without-gdbm --archive-name %{name}-%{version} --builddir %{buildroot}/%{_libdir}
 
 # Remove shebang lines from .py files that aren't executable, and
 # remove executability from .py files that don't have a shebang line:
-#find \
-#  %{buildroot}                                                           \
-#  -name "*.py"                                                           \
-#    \(                                                                   \
-#       \( \! -perm /u+x,g+x,o+x -exec sed -e '/^#!/Q 0' -e 'Q 1' {} \;   \
-#             -print -exec sed -i '1d' {} \;                              \
-#          \)                                                             \
-#       -o                                                                \
-#       \(                                                                \
-#             -perm /u+x,g+x,o+x ! -exec grep -m 1 -q '^#!' {} \;         \
-#             -exec chmod a-x {} \;                                       \
-#        \)                                                               \
-#    \)
-
-#mkdir -p %{buildroot}/%{pypyprefix}/site-packages
+find \
+  %{buildroot}                                                           \
+  -name "*.py"                                                           \
+    \(                                                                   \
+       \( \! -perm /u+x,g+x,o+x -exec sed -e '/^#!/Q 0' -e 'Q 1' {} \;   \
+             -print -exec sed -i '1d' {} \;                              \
+          \)                                                             \
+       -o                                                                \
+       \(                                                                \
+             -perm /u+x,g+x,o+x ! -exec grep -m 1 -q '^#!' {} \;         \
+             -exec chmod a-x {} \;                                       \
+        \)                                                               \
+    \)
 
 
-# pypy uses .pyc files by default (--objspace-usepycfiles), but has a slightly
-# different bytecode format to CPython.  It doesn't use .pyo files: the -O flag
-# is treated as a "dummy optimization flag for compatibility with C Python"
-#
-# pypy-1.4/pypy/module/imp/importing.py has this comment:
-    # XXX picking a magic number is a mess.  So far it works because we
-    # have only two extra opcodes, which bump the magic number by +1 and
-    # +2 respectively, and CPython leaves a gap of 10 when it increases
-    # its own magic number.  To avoid assigning exactly the same numbers
-    # as CPython we always add a +2.  We'll have to think again when we
-    # get at the fourth new opcode :-(
-    #
-    #  * CALL_LIKELY_BUILTIN    +1
-    #  * CALL_METHOD            +2
-    #
-    # In other words:
-    #
-    #     default_magic        -- used by CPython without the -U option
-    #     default_magic + 1    -- used by CPython with the -U option
-    #     default_magic + 2    -- used by PyPy without any extra opcode
-    #     ...
-    #     default_magic + 5    -- used by PyPy with both extra opcodes
-#
-
-# pypy-1.4/pypy/interpreter/pycode.py has:
-#
-#  default_magic = (62141+2) | 0x0a0d0000                  # this PyPy's magic
-#                                                          # (62131=CPython 2.5.1)
-# giving a value for "default_magic" for PyPy of 0xa0df2bf.
-# Note that this corresponds to the "default_magic + 2" from the comment above
-
-# In my builds:
-#   $ ./pypy --info | grep objspace.opcodes
-#                objspace.opcodes.CALL_LIKELY_BUILTIN: False
-#                        objspace.opcodes.CALL_METHOD: True
-# so I'd expect the magic number to be:
-#    0x0a0df2bf + 2 (the flag for CALL_METHOD)
-# giving
-#    0x0a0df2c1
-#
-# I'm seeing
-#   c1 f2 0d 0a
-# as the first four bytes of the .pyc files, which is consistent with this.
-
-
-# Bytecompile all of the .py files we ship, using our pypy binary, giving us
-# .pyc files for pypy.  The script actually does the work twice (passing in -O
-# the second time) but it's simplest to reuse that script.
-#
-# The script has special-casing for .py files below
-#    /usr/lib{64}/python[0-9].[0-9]
-# but given that we're installing into a different path, the supplied "default"
-# implementation gets used instead.
-#
-# Note that some of the test files deliberately contain syntax errors, so
-# we pass 0 for the second argument ("errors_terminate"):
-#/usr/lib/rpm/brp-python-bytecompile \
-#  %{buildroot}/%{_bindir}/%{name} \
-#  0
-
-#%{buildroot}/%{pypyprefix}/%{name} -c 'import _tkinter'
-#%{buildroot}/%{pypyprefix}/%{name} -c 'import Tkinter'
-#%{buildroot}/%{pypyprefix}/%{name} -c 'import _sqlite3'
-#%{buildroot}/%{pypyprefix}/%{name} -c 'import _curses'
-#%{buildroot}/%{pypyprefix}/%{name} -c 'import curses'
-#%{buildroot}/%{pypyprefix}/%{name} -c 'import syslog'
-#archive-name%{buildroot}/%{pypyprefix}/%{name} -c 'from _sqlite3 import *'
-
-# Makes dir %{name}-%{version} in %{buildroot}/%{_libdir} == %{pypyprefix} 
-%{__python} pypy/tool/release/package.py --without-gdbm --archive-name %{name}-%{version} --builddir %{buildroot}/%{_libdir}
+%ifnarch aarch64 ppc64le
+    execstack --clear-execstack %{buildroot}/%{pypyprefix}/bin/pypy
+%endif
 
 # Header files for C extension modules.
 # Upstream's packaging process (pypy/tool/release/package.py)
@@ -604,14 +477,6 @@ mkdir -p %{buildroot}/%{pypyprefix}
 # (it also has an apparently out-of-date comment about copying them from
 # pypy/_interfaces, but this directory doesn't seem to exist, and it doesn't
 # seem to do this as of 2011-01-13)
-
-# FIXME: arguably these should be instead put into a subdir below /usr/include,
-# it's not yet clear to me how upstream plan to deal with the C extension
-# interface going forward, so let's just mimic upstream for now.
-%global pypy_include_dir  %{pypyprefix}/include
-#mkdir -p %{buildroot}/%{pypy_include_dir}
-#cp include/*.h %{buildroot}/%{pypy_include_dir}
-
 
 # Capture the RPython source code files from the build within the debuginfo
 # package (rhbz#666975)
@@ -852,6 +717,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Tue Aug 18 2015 Michal Cyprian <mcyprian@redhat.com> - 2.6.0-3
+- Use script package.py in install section 
+
 * Thu Jun 18 2015 Fedora Release Engineering <rel-eng@lists.fedoraproject.org> - 2.6.0-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_23_Mass_Rebuild
 
