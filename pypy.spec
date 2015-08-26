@@ -182,6 +182,7 @@ BuildRequires: python-devel
 
 %endif
 
+BuildRequires:  python
 BuildRequires:  libffi-devel
 BuildRequires:  tcl-devel
 BuildRequires:  tk-devel
@@ -480,11 +481,11 @@ find \
 
 # Capture the RPython source code files from the build within the debuginfo
 # package (rhbz#666975)
-#%global pypy_debuginfo_dir /usr/src/debug/pypy-%{version}-src
-#mkdir -p %{buildroot}%{pypy_debuginfo_dir}
+%global pypy_debuginfo_dir /usr/src/debug/pypy-%{version}-src
+mkdir -p %{buildroot}%{pypy_debuginfo_dir}
 
 # copy over everything:
-#cp -a pypy %{buildroot}%{pypy_debuginfo_dir}
+cp -a pypy %{buildroot}%{pypy_debuginfo_dir}
 
 # ...then delete files that aren't:
 #   - *.py files
