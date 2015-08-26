@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        2.6.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -718,6 +718,10 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Wed Aug 26 2015 Michal Cyprian <mcyprian@redhat.com> - 2.6.0-4
+- Fix debuginfo missing sources
+Resolves: rhbz#1256001
+
 * Tue Aug 18 2015 Michal Cyprian <mcyprian@redhat.com> - 2.6.0-3
 - Use script package.py in install section 
 
