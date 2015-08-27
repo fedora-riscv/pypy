@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        2.6.0
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -182,7 +182,6 @@ BuildRequires: python-devel
 
 %endif
 
-BuildRequires:  python
 BuildRequires:  libffi-devel
 BuildRequires:  tcl-devel
 BuildRequires:  tk-devel
@@ -449,7 +448,7 @@ mkdir -p %{buildroot}/%{pypyprefix}
 
 
 # Run installing script,  archive-name  %{name}-%{version} in %{buildroot}/%{_libdir} == %{pypyprefix} 
-%{__python} pypy/tool/release/package.py --without-gdbm --archive-name %{name}-%{version} --builddir %{buildroot}/%{_libdir}
+%{bootstrap_python_interp} pypy/tool/release/package.py --without-gdbm --archive-name %{name}-%{version} --builddir %{buildroot}/%{_libdir}
 
 # Remove shebang lines from .py files that aren't executable, and
 # remove executability from .py files that don't have a shebang line:
@@ -718,6 +717,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Wed Aug 26 2015 Michal Cyprian <mcyprian@redhat.com> - 2.6.0-5
+- Use %{bootstrap_python_interp} macro to run package.py
+
 * Wed Aug 26 2015 Michal Cyprian <mcyprian@redhat.com> - 2.6.0-4
 - Fix debuginfo missing sources
 Resolves: rhbz#1256001
