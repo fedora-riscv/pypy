@@ -1,6 +1,6 @@
 Name:           pypy
-Version:        2.6.0
-Release:        5%{?dist}
+Version:        2.6.1
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -153,9 +153,6 @@ Patch1: 006-always-log-stdout.patch
 # community that won't make sense outside of it).  [Sorry to be a killjoy]
 Patch2: 007-remove-startup-message.patch
 
-# Fix bug in pypy installing script package.py
-Patch3: pypy_tool_release_package.patch
-
 # Build-time requirements:
 
 # pypy's can be rebuilt using itself, rather than with CPython; doing so
@@ -274,7 +271,6 @@ Build of PyPy with support for micro-threads for massive concurrency
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
-%patch3 -p1
 # Replace /usr/local/bin/python shebangs with /usr/bin/python:
 find -name "*.py" -exec \
   sed \
@@ -717,6 +713,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Mon Aug 31 2015 Michal Cyprian <mcyprian@redhat.com> - 2.6.1-1
+- Upgrade to 2.6.1
+
 * Wed Aug 26 2015 Michal Cyprian <mcyprian@redhat.com> - 2.6.0-5
 - Use %{bootstrap_python_interp} macro to run package.py
 
