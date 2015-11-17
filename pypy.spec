@@ -1,5 +1,5 @@
 Name:           pypy
-Version:        2.6.1
+Version:        4.0.0
 Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
@@ -713,6 +713,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Tue Nov 17 2015 Matej Stuchlik <mstuchli@redhat.com> - 4.0.0-1
+- Update to 4.0.0
+
 * Mon Aug 31 2015 Michal Cyprian <mcyprian@redhat.com> - 2.6.1-1
 - Upgrade to 2.6.1
 
