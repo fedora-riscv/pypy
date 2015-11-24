@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        4.0.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -90,7 +90,7 @@ URL:            http://pypy.org/
 # it on the other archs.  The resulting binary will typically be slower than
 # CPython for the latter case.
 
-%ifarch %{ix86} x86_64 %{arm}
+%ifarch %{ix86} x86_64 %{arm} %{power64}
 %global with_jit 1
 %else
 %global with_jit 0
@@ -161,7 +161,7 @@ Patch2: 007-remove-startup-message.patch
 # Turn it off with this boolean, to revert back to rebuilding using CPython
 # and avoid a cycle in the build-time dependency graph:
 
-%global use_self_when_building 1
+%global use_self_when_building 0
 %if 0%{use_self_when_building}
 BuildRequires: pypy
 %global bootstrap_python_interp pypy
@@ -206,11 +206,8 @@ BuildRequires:  time
 BuildRequires:  perl
 %endif
 
-
-# No prelink on these arches
-%ifnarch aarch64 ppc64le
-BuildRequires:  /usr/bin/execstack
-%endif
+# All arches have execstack
+BuildRequires:  execstack
 
 # For byte-compiling the JIT-viewing mode:
 %if %{with_emacs}
@@ -463,9 +460,7 @@ find \
     \)
 
 
-%ifnarch aarch64 ppc64le
-    execstack --clear-execstack %{buildroot}/%{pypyprefix}/bin/pypy
-%endif
+execstack --clear-execstack %{buildroot}/%{pypyprefix}/bin/pypy
 
 # Header files for C extension modules.
 # Upstream's packaging process (pypy/tool/release/package.py)
@@ -713,6 +708,10 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Tue Nov 24 2015 Peter Robinson <pbrobinson@fedoraproject.org> 4.0.0-2
+- All arches have execstack
+- Boostrap pypy on ppc64/ppc64le
+
 * Tue Nov 17 2015 Matej Stuchlik <mstuchli@redhat.com> - 4.0.0-1
 - Update to 4.0.0
 
