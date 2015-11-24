@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        4.0.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -161,7 +161,7 @@ Patch2: 007-remove-startup-message.patch
 # Turn it off with this boolean, to revert back to rebuilding using CPython
 # and avoid a cycle in the build-time dependency graph:
 
-%global use_self_when_building 0
+%global use_self_when_building 1
 %if 0%{use_self_when_building}
 BuildRequires: pypy
 %global bootstrap_python_interp pypy
@@ -708,6 +708,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Tue Nov 24 2015 Peter Robinson <pbrobinson@fedoraproject.org> 4.0.0-3
+- Post bootstrap build
+
 * Tue Nov 24 2015 Peter Robinson <pbrobinson@fedoraproject.org> 4.0.0-2
 - All arches have execstack
 - Boostrap pypy on ppc64/ppc64le
