@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        4.0.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -708,6 +708,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Tue Nov 24 2015 Peter Robinson <pbrobinson@fedoraproject.org> 4.0.0-3
+- Post bootstrap build
+
 * Tue Nov 24 2015 Peter Robinson <pbrobinson@fedoraproject.org> 4.0.0-2
 - All arches have execstack
 - Boostrap pypy on ppc64/ppc64le
