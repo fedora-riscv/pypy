@@ -351,7 +351,7 @@ BuildPyPy() {
   # of root pointers:
   %global gcrootfinder_options --gcrootfinder=shadowstack
 
-  export CFLAGS=$(echo "$RPM_OPT_FLAGS")
+  export CFLAGS=$(echo "$RPM_OPT_FLAGS" | sed -e 's/-g//')
 
 %else
   # Go with the default, which is "asmgcc"
