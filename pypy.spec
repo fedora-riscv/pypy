@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        4.0.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -708,6 +708,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Thu Feb 04 2016 Fedora Release Engineering <releng@fedoraproject.org> - 4.0.1-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_24_Mass_Rebuild
+
 * Thu Jan 28 2016 Michal Cyprian <mcyprian@redhat.com> - 4.0.1-1
 - Update to 4.0.1
 
