@@ -1,5 +1,5 @@
 Name:           pypy
-Version:        5.0.0
+Version:        5.0.1
 Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
@@ -161,7 +161,7 @@ Patch2: 007-remove-startup-message.patch
 # Turn it off with this boolean, to revert back to rebuilding using CPython
 # and avoid a cycle in the build-time dependency graph:
 
-%global use_self_when_building 0
+%global use_self_when_building 1
 %if 0%{use_self_when_building}
 BuildRequires: pypy
 %global bootstrap_python_interp pypy
@@ -374,6 +374,11 @@ BuildPyPy() {
 
 %endif
 
+    # Reduce memory usage on arm during installation
+%ifarch %{arm}
+PYPY_GC_MAX_DELTA=200MB pypy --jit loop_longevity=300 ../../rpython/bin/rpython -Ojit targetpypystandalone
+%endif
+  
   # The generated C code leads to many thousands of warnings of the form:
   #   warning: variable 'l_v26003' set but not used [-Wunused-but-set-variable]
   # Suppress them:
@@ -708,6 +713,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Mon Mar 21 2016 Michal Cyprian <mcyprian@redhat.com> - 5.0.1-1
+- Update to 5.0.1
+
 * Mon Mar 14 2016 Michal Cyprian <mcyprian@redhat.com> - 5.0.0-1
 - Update to 5.0.0
 
