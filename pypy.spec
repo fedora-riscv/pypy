@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        5.0.1
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -526,16 +526,13 @@ cp -a rpython/jit/tool/pypytrace-mode.elc %{buildroot}/%{_emacs_sitelispdir}/%{n
 %endif
 
 # Move files to the right places and remove unnecessary files
-mkdir %{buildroot}/%{_includedir}
-mv %{buildroot}/%{pypy_include_dir}/*.h %{buildroot}/%{_includedir}
-mv %{buildroot}/%{pypy_include_dir}/numpy/ %{buildroot}/%{_includedir}
 ln -sf %{pypyprefix}/bin/%{name} %{buildroot}/%{_bindir}/%{name}
 mv %{buildroot}/%{pypyprefix}/bin/libpypy-c.so %{buildroot}/%{_libdir}
 rm -rf %{buildroot}/%{_libdir}/%{name}-%{version}.tar.bz2
 rm -rf %{buildroot}/%{pypyprefix}/LICENSE
 rm -rf %{buildroot}/%{pypyprefix}/README.rst
 rm -rf %{buildroot}/%{pypyprefix}/README.rst
-rm -rf %{buildroot}/%{pypy_include_dir}
+rm -rf %{buildroot}/%{pypy_include_dir}/README
 chrpath --delete %{buildroot}/%{pypyprefix}/bin/%{name}
 
 # Install macros for rpm:
@@ -699,9 +696,9 @@ CheckPyPy %{name}-c-stackless
 %{pypyprefix}/bin/%{name}
 
 %files devel
-%dir %{_includedir}
-%{_includedir}/*.h
-%{_includedir}/numpy/*.h
+%dir %{pypy_include_dir}
+%{pypy_include_dir}/*.h
+%{pypy_include_dir}/numpy
 %{_rpmconfigdir}/macros.d/macros.%{name}
 
 %if 0%{with_stackless}
@@ -713,6 +710,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Fri May 13 2016 Miro Hrončok <mhroncok@redhat.com> - 5.0.1-2
+- Move header files back to %%{pypy_include_dir} (rhbz#1328025)
+
 * Mon Mar 21 2016 Michal Cyprian <mcyprian@redhat.com> - 5.0.1-1
 - Update to 5.0.1
 
