@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        5.0.1
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -153,6 +153,12 @@ Patch1: 006-always-log-stdout.patch
 # community that won't make sense outside of it).  [Sorry to be a killjoy]
 Patch2: 007-remove-startup-message.patch
 
+# Make PyPy's build scripts Python 2.6 compatible
+Patch3: 009-26-compatibility.patch
+
+# Fix compilation error in Python 2.6 environment, issue 2265
+# https://bitbucket.org/pypy/pypy/issues/2265/unable-to-translate-pypy-50x-on-centos-67
+Patch4: 010-cpyext-api-fix.patch
 # Build-time requirements:
 
 # pypy's can be rebuilt using itself, rather than with CPython; doing so
@@ -166,6 +172,10 @@ Patch2: 007-remove-startup-message.patch
 BuildRequires: pypy
 %global bootstrap_python_interp pypy
 %else
+
+%if 0%{?rhel} == 6
+BuildRequires: python-argparse
+%endif
 
 # Python 2.6 or later is needed, so on RHEL5 (2.4) we need to use the alternate
 # python26 rpm:
@@ -268,6 +278,8 @@ Build of PyPy with support for micro-threads for massive concurrency
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
+%patch3 -p2
+%patch4 -p2
 # Replace /usr/local/bin/python shebangs with /usr/bin/python:
 find -name "*.py" -exec \
   sed \
@@ -710,6 +722,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Fri Jun 10 2016 Michal Cyprian <mcyprian@redhat.com> - 5.0.1-3
+- Add patches necessary to rebuild for EPEL 6
+
 * Fri May 13 2016 Miro Hrončok <mhroncok@redhat.com> - 5.0.1-2
 - Move header files back to %%{pypy_include_dir} (rhbz#1328025)
 
