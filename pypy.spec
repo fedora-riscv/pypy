@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        1.9
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -163,6 +163,13 @@ Patch4: more-readable-c-code.patch
 # executable
 # Not yet sent upstream
 Patch5: pypy-1.6-fix-test-subprocess-with-nonreadable-path-dir.patch
+
+# CVE-2016-0772 python: smtplib StartTLS stripping attack
+# rhbz#1303647: https://bugzilla.redhat.com/show_bug.cgi?id=1303647
+# rhbz#1351681: https://bugzilla.redhat.com/show_bug.cgi?id=1351681
+# FIXED UPSTREAM: https://hg.python.org/cpython/rev/b3ce713fb9be
+# Raise an error when STARTTLS fails
+Patch6: 009-raise-an-error-when-STARTTLS-fails.patch
 
 # Build-time requirements:
 
@@ -358,6 +365,7 @@ Build of PyPy with support for micro-threads for massive concurrency
 #   [translation:ERROR]  AttributeError: 'Block' object has no attribute 'isstartblock'
 
 %patch5 -p1
+%patch6 -p1
 
 # Replace /usr/local/bin/python shebangs with /usr/bin/python:
 find -name "*.py" -exec \
@@ -890,6 +898,13 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
+* Thu Jun 30 2016 Miro Hrončok <mhroncok@redhat.com> - 1.9-2
+- Fix for: CVE-2016-0772 python: smtplib StartTLS stripping attack
+- Raise an error when STARTTLS fails
+- rhbz#1303647: https://bugzilla.redhat.com/show_bug.cgi?id=1303647
+- rhbz#1351681: https://bugzilla.redhat.com/show_bug.cgi?id=1351681
+- Fixed upstream: https://hg.python.org/cpython/rev/b3ce713fb9be
+
 * Fri Jun  8 2012 David Malcolm <dmalcolm@redhat.com> - 1.9-1
 - 1.9
 
