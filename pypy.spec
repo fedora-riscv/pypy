@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        4.0.1
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -153,6 +153,13 @@ Patch1: 006-always-log-stdout.patch
 # community that won't make sense outside of it).  [Sorry to be a killjoy]
 Patch2: 007-remove-startup-message.patch
 
+# CVE-2016-0772 python: smtplib StartTLS stripping attack
+# rhbz#1303647: https://bugzilla.redhat.com/show_bug.cgi?id=1303647
+# rhbz#1351679: https://bugzilla.redhat.com/show_bug.cgi?id=1351679
+# FIXED UPSTREAM: https://hg.python.org/cpython/rev/b3ce713fb9be
+# Raise an error when STARTTLS fails
+Patch3: 009-raise-an-error-when-STARTTLS-fails.patch
+
 # Build-time requirements:
 
 # pypy's can be rebuilt using itself, rather than with CPython; doing so
@@ -268,6 +275,7 @@ Build of PyPy with support for micro-threads for massive concurrency
 %patch0 -p1
 %patch1 -p1
 %patch2 -p1
+%patch3 -p1
 # Replace /usr/local/bin/python shebangs with /usr/bin/python:
 find -name "*.py" -exec \
   sed \
@@ -705,6 +713,13 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Thu Jun 30 2016 Miro Hrončok <mhroncok@redhat.com> - 4.0.1-3
+- Fix for: CVE-2016-0772 python: smtplib StartTLS stripping attack
+- Raise an error when STARTTLS fails
+- rhbz#1303647: https://bugzilla.redhat.com/show_bug.cgi?id=1303647
+- rhbz#1351679: https://bugzilla.redhat.com/show_bug.cgi?id=1351679
+- Fixed upstream: https://hg.python.org/cpython/rev/b3ce713fb9be
+
 * Fri May 13 2016 Miro Hrončok <mhroncok@redhat.com> - 4.0.1-2
 - Move header files back to %%{pypy_include_dir} (rhbz#1328025)
 
