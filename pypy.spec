@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        4.0.1
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -197,6 +197,7 @@ BuildRequires:  bzip2-devel
 BuildRequires:  ncurses-devel
 BuildRequires:  expat-devel
 BuildRequires:  openssl-devel
+BuildRequires:  gdbm-devel
 BuildRequires:  chrpath
 %ifnarch s390
 BuildRequires:  valgrind-devel
@@ -449,7 +450,7 @@ mkdir -p %{buildroot}/%{pypyprefix}
 
 
 # Run installing script,  archive-name  %{name}-%{version} in %{buildroot}/%{_libdir} == %{pypyprefix} 
-%{bootstrap_python_interp} pypy/tool/release/package.py --without-gdbm --archive-name %{name}-%{version} --builddir %{buildroot}/%{_libdir}
+%{bootstrap_python_interp} pypy/tool/release/package.py --archive-name %{name}-%{version} --builddir %{buildroot}/%{_libdir}
 
 # Remove shebang lines from .py files that aren't executable, and
 # remove executability from .py files that don't have a shebang line:
@@ -713,6 +714,10 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Tue Jul 26 2016 Miro Hrončok <mhroncok@redhat.com> - 4.0.1-4
+- Build with gdbm support
+- rhbz#1358482
+
 * Thu Jun 30 2016 Miro Hrončok <mhroncok@redhat.com> - 4.0.1-3
 - Fix for: CVE-2016-0772 python: smtplib StartTLS stripping attack
 - Raise an error when STARTTLS fails
