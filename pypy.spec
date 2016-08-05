@@ -1,6 +1,9 @@
+%global alphatag b1
+
 Name:           pypy
-Version:        5.0.1
-Release:        4%{?dist}
+Version:        2.0.2
+Release:        1%{?dist}
+Epoch:          1
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -10,6 +13,7 @@ Group:          Development/Languages
 # licensing terms
 License:        MIT and Python and UCD
 URL:            http://pypy.org/
+BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 # High-level configuration of the build:
 
@@ -77,20 +81,20 @@ URL:            http://pypy.org/
 #
 # Unfortunately, the JIT support is only available on some architectures.
 #
-# rpython/jit/backend/detect_cpu.py:getcpuclassname currently supports the
+# pypy-1.4/pypy/jit/backend/detect_cpu.py:getcpuclassname currently supports the
 # following options:
 #  'i386', 'x86'
 #  'x86-without-sse2':
 #  'x86_64'
-#  'armv6', 'armv7' (versions 6 and 7, hard- and soft-float ABI)
 #  'cli'
 #  'llvm'
 #
 # We will only build with JIT support on those architectures, and build without
 # it on the other archs.  The resulting binary will typically be slower than
 # CPython for the latter case.
-
-%ifarch %{ix86} x86_64 %{arm} %{power64}
+#
+%ifarch %{ix86} x86_64
+# FIXME: is there a better way of expressing "intel" here?
 %global with_jit 1
 %else
 %global with_jit 0
@@ -116,12 +120,11 @@ URL:            http://pypy.org/
 # Easy way to turn off the selftests:
 %global run_selftests 1
 
-%global pypy_include_dir  %{pypyprefix}/include
 %global pypyprefix %{_libdir}/%{name}-%{version}
 %global pylibver 2.7
 
 # We refer to this subdir of the source tree in a few places during the build:
-%global goal_dir pypy/goal
+%global goal_dir %{name}/goal
 
 
 # Turn off the brp-python-bytecompile postprocessing script
@@ -130,35 +133,42 @@ URL:            http://pypy.org/
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0: https://bitbucket.org/pypy/pypy/downloads/%{name}-%{version}-src.tar.bz2
+Source0:        https://bitbucket.org/pypy/pypy/downloads/%{name}-%{version}-src.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
-Source2: macros.%{name}
+Source2:        macros.%{name}
+
+# Edit a translator file for linux in order to configure our cflags and dynamic libffi
+Patch0:         config.patch
 
 # By default, if built at a tty, the translation process renders a Mandelbrot
 # set to indicate progress.
 # This obscures useful messages, and may waste CPU cycles, so suppress it, and
 # merely render dots:
-Patch0: pypy-1.2-suppress-mandelbrot-set-during-tty-build.patch
+Patch1:         pypy-1.2-suppress-mandelbrot-set-during-tty-build.patch
+
+# In my koji builds, /root/bin is in the PATH for some reason
+# This leads to test_subprocess.py failing, due to "test_leaking_fds_on_error"
+# trying every dir in PATH for "nonexisting_i_hope", which leads to it raising
+#  OSError: [Errno 13] Permission denied
+# when it tries to read /root/bin, rather than raising "No such file"
+#
+# Work around this by specifying an absolute path for the non-existant
+# executable
+# Not yet sent upstream
+Patch2: pypy-1.6-fix-test-subprocess-with-nonreadable-path-dir.patch
 
 # Patch pypy.translator.platform so that stdout from "make" etc gets logged,
 # rather than just stderr, so that the command-line invocations of the compiler
 # and linker are captured:
-Patch1: 006-always-log-stdout.patch
+Patch3: 006-always-log-stdout.patch
 
 # Disable the printing of a quote from IRC on startup (these are stored in
 # ROT13 form in lib_pypy/_pypy_irc_topic.py).  Some are cute, but some could
 # cause confusion for end-users (and many are in-jokes within the PyPy
 # community that won't make sense outside of it).  [Sorry to be a killjoy]
-Patch2: 007-remove-startup-message.patch
-
-# Make PyPy's build scripts Python 2.6 compatible
-Patch3: 009-26-compatibility.patch
-
-# Fix compilation error in Python 2.6 environment, issue 2265
-# https://bitbucket.org/pypy/pypy/issues/2265/unable-to-translate-pypy-50x-on-centos-67
-Patch4: 010-cpyext-api-fix.patch
+Patch4: 007-remove-startup-message.patch
 
 # CVE-2016-0772 python: smtplib StartTLS stripping attack
 # rhbz#1303647: https://bugzilla.redhat.com/show_bug.cgi?id=1303647
@@ -166,6 +176,7 @@ Patch4: 010-cpyext-api-fix.patch
 # FIXED UPSTREAM: https://hg.python.org/cpython/rev/b3ce713fb9be
 # Raise an error when STARTTLS fails
 Patch5: 009-raise-an-error-when-STARTTLS-fails.patch
+
 
 # Build-time requirements:
 
@@ -181,10 +192,6 @@ BuildRequires: pypy
 %global bootstrap_python_interp pypy
 %else
 
-%if 0%{?rhel} == 6
-BuildRequires: python-argparse
-%endif
-
 # Python 2.6 or later is needed, so on RHEL5 (2.4) we need to use the alternate
 # python26 rpm:
 %if 0%{?rhel} == 5
@@ -198,18 +205,12 @@ BuildRequires: python-devel
 %endif
 
 BuildRequires:  libffi-devel
-BuildRequires:  tcl-devel
-BuildRequires:  tk-devel
-
-BuildRequires:  sqlite-devel
-
 BuildRequires:  zlib-devel
 BuildRequires:  bzip2-devel
 BuildRequires:  ncurses-devel
 BuildRequires:  expat-devel
 BuildRequires:  openssl-devel
-BuildRequires:  chrpath
-%ifnarch s390
+%ifarch %{ix86} x86_64 ppc ppc64 s390x
 BuildRequires:  valgrind-devel
 %endif
 
@@ -224,8 +225,7 @@ BuildRequires:  time
 BuildRequires:  perl
 %endif
 
-# All arches have execstack
-#BuildRequires:  execstack
+BuildRequires:  /usr/bin/execstack
 
 # For byte-compiling the JIT-viewing mode:
 %if %{with_emacs}
@@ -233,7 +233,7 @@ BuildRequires:  emacs
 %endif
 
 # Metadata for the core package (the JIT build):
-Requires: %{name}-libs%{?_isa} = %{version}-%{release}
+Requires: pypy-libs = %{version}-%{release}
 
 %description
 PyPy's implementation of Python, featuring a Just-In-Time compiler on some CPU
@@ -265,30 +265,40 @@ Libraries required by the various PyPy implementations of Python.
 %package devel
 Group:    Development/Languages
 Summary:  Development tools for working with PyPy
-Requires: %{name}%{?_isa} = %{version}-%{release}
-
 %description devel
 Header files for building C extension modules against PyPy
+
+Requires: pypy = %{version}-%{release}
 
 
 %if 0%{with_stackless}
 %package stackless
 Group:    Development/Languages
 Summary:  Stackless Python interpreter built using PyPy
-Requires: %{name}-libs%{?_isa} = %{version}-%{release}
+Requires: pypy-libs = %{version}-%{release}
+%description stackless
+Build of PyPy with support for micro-threads for massive concurrency
+%endif
+
+%if 0%{with_stackless}
+%package stackless
+Group:    Development/Languages
+Summary:  Stackless Python interpreter built using PyPy
+Requires: pypy-libs = %{version}-%{release}
 %description stackless
 Build of PyPy with support for micro-threads for massive concurrency
 %endif
 
 
 %prep
-%setup -n %{name}-%{version}-src
-%patch0 -p1
-%patch1 -p1
+%setup -q -n %{name}-%{version}-src
+%patch0 -p1 -b .configure-fedora
+%patch1 -p1 -b .suppress-mandelbrot-set-during-tty-build
 %patch2 -p1
-%patch3 -p2
-%patch4 -p2
+%patch3 -p1
+%patch4 -p1
 %patch5 -p1
+
 
 # Replace /usr/local/bin/python shebangs with /usr/bin/python:
 find -name "*.py" -exec \
@@ -297,20 +307,21 @@ find -name "*.py" -exec \
     "{}" \
     \;
 
+find . -name '*.jar' -exec rm \{\} \;
+
+# Remove stray ".svn" directories present within the 1.4.1 tarball
+# (reported as https://codespeak.net/issue/pypy-dev/issue612 )
+find . -path '*/.svn*' -delete
+
+# Remove DOS batch files:
+find -name "*.bat"|xargs rm -f
+
 for f in rpython/translator/goal/bpnn.py ; do
    # Detect shebang lines && remove them:
    sed -e '/^#!/Q 0' -e 'Q 1' $f \
       && sed -i '1d' $f
    chmod a-x $f
 done
-
-rm -rf lib-python/3
-
-# Replace all lib-python python shebangs with pypy
-find lib-python/%{pylibver} -name "*.py" -exec \
-  sed -r -i '1s|^#!\s*/usr/bin.*python.*|#!/usr/bin/%{name}|' \
-    "{}" \
-    \;
 
 %build
 
@@ -373,7 +384,7 @@ BuildPyPy() {
   # of root pointers:
   %global gcrootfinder_options --gcrootfinder=shadowstack
 
-  export CFLAGS=$(echo "$RPM_OPT_FLAGS" | sed -e 's/-g//')
+  export CFLAGS=$(echo "$RPM_OPT_FLAGS")
 
 %else
   # Go with the default, which is "asmgcc"
@@ -396,11 +407,6 @@ BuildPyPy() {
 
 %endif
 
-    # Reduce memory usage on arm during installation
-%ifarch %{arm}
-PYPY_GC_MAX_DELTA=200MB pypy --jit loop_longevity=300 ../../rpython/bin/rpython -Ojit targetpypystandalone
-%endif
-  
   # The generated C code leads to many thousands of warnings of the form:
   #   warning: variable 'l_v26003' set but not used [-Wunused-but-set-variable]
   # Suppress them:
@@ -418,13 +424,15 @@ PYPY_GC_MAX_DELTA=200MB pypy --jit loop_longevity=300 ../../rpython/bin/rpython 
   fi
 
   # Here's where we actually invoke the build:
-  RPM_BUILD_ROOT= \
-  PYPY_USESSION_DIR=$(pwd) \
-  PYPY_USESSION_BASENAME=$ExeName \
-  $INTERP ../../rpython/bin/rpython  \
-  %{gcrootfinder_options} \
-  $Options \
-  targetpypystandalone
+  time \
+    RPM_BUILD_ROOT= \
+    PYPY_USESSION_DIR=$(pwd) \
+    PYPY_USESSION_BASENAME=$ExeName \
+    $INTERP ../../rpython/bin/rpython  \
+    --output=$ExeName \
+    %{gcrootfinder_options} \
+    $Options \
+    targetpypystandalone
 
   echo "--------------------------------------------------------------"
   echo "--------------------------------------------------------------"
@@ -456,19 +464,73 @@ BuildPyPy \
 %{_emacs_bytecompile} rpython/jit/tool/pypytrace-mode.el
 %endif
 
-
 %install
+rm -rf $RPM_BUILD_ROOT
+
+
+# Install the various executables:
+
+InstallPyPy() {
+    ExeName=$1
+
+    # To ensure compatibility with virtualenv, pypy finds its libraries
+    # relative to itself; this happens within
+    #    pypy/translator/goal/app_main.py:get_library_path
+    # which calls sys.pypy_initial_path(dirname) on the dir containing
+    # the executable, with symlinks resolved.
+    #
+    # Hence we make /usr/bin/pypy be a symlink to the real binary, which we
+    # place within /usr/lib[64]/pypy-1.* as pypy
+    #
+    # This ought to enable our pypy build to work with virtualenv
+    # (rhbz#742641)
+    install -m 755 %{goal_dir}/$ExeName %{buildroot}/%{pypyprefix}/$ExeName
+    ln -s %{pypyprefix}/$ExeName %{buildroot}/%{_bindir}
+
+    # The generated machine code doesn't need an executable stack,  but
+    # one of the assembler files (gcmaptable.s) doesn't have the necessary
+    # metadata to inform gcc of that, and thus gcc pessimistically assumes
+    # that the built binary does need an executable stack.
+    #
+    # Reported upstream as: https://codespeak.net/issue/pypy-dev/issue610
+    #
+    # I tried various approaches involving fixing the build, but the simplest
+    # approach is to postprocess the ELF file:
+    execstack --clear-execstack %{buildroot}/%{pypyprefix}/$ExeName
+}
 
 mkdir -p %{buildroot}/%{_bindir}
 mkdir -p %{buildroot}/%{pypyprefix}
 
-#%if 0%{with_stackless}
-#InstallPyPy %{name}-stackless
-#%endif
+InstallPyPy pypy
+
+%if 0%{with_stackless}
+InstallPyPy pypy-stackless
+%endif
 
 
-# Run installing script,  archive-name  %{name}-%{version} in %{buildroot}/%{_libdir} == %{pypyprefix} 
-%{bootstrap_python_interp} pypy/tool/release/package.py --without-gdbm --archive-name %{name}-%{version} --builddir %{buildroot}/%{_libdir}
+# Install the various support libraries as described at:
+#   http://codespeak.net/pypy/dist/pypy/doc/getting-started-python.html#installation
+# which refers to a "PREFIX" found relative to the location of the binary.
+# Given that the pypy binaries will be in /usr/bin, PREFIX can be
+# "../share/pypy-1.2" relative to that directory, i.e. /usr/share/pypy-1.2
+# 
+# Running "strace" on a built binary indicates that it searches within
+#   PREFIX/lib-python/modified-2.5.2
+# not
+#   PREFIX/lib-python/modified.2.5.2
+# as given on the above page, i.e. it uses '-' not '.'
+
+cp -a lib-python %{buildroot}/%{pypyprefix}
+
+cp -a lib_pypy %{buildroot}/%{pypyprefix}
+
+# Remove a text file that documents which selftests fail on Win32:
+rm %{buildroot}/%{pypyprefix}/lib-python/win32-failures.txt
+
+# Remove a text file containing upstream's recipe for syncing stdlib in
+# their hg repository with cpython's:
+rm %{buildroot}/%{pypyprefix}/lib-python/stdlib-upgrade.txt
 
 # Remove shebang lines from .py files that aren't executable, and
 # remove executability from .py files that don't have a shebang line:
@@ -486,8 +548,15 @@ find \
         \)                                                               \
     \)
 
+mkdir -p %{buildroot}/%{pypyprefix}/site-packages
 
-#execstack --clear-execstack %{buildroot}/%{pypyprefix}/bin/pypy
+
+# Note that some of the test files deliberately contain syntax errors, so
+# we pass 0 for the second argument ("errors_terminate"):
+/usr/lib/rpm/brp-python-bytecompile \
+  %{buildroot}/%{_bindir}/pypy \
+  0
+
 
 # Header files for C extension modules.
 # Upstream's packaging process (pypy/tool/release/package.py)
@@ -495,6 +564,14 @@ find \
 # (it also has an apparently out-of-date comment about copying them from
 # pypy/_interfaces, but this directory doesn't seem to exist, and it doesn't
 # seem to do this as of 2011-01-13)
+
+# FIXME: arguably these should be instead put into a subdir below /usr/include,
+# it's not yet clear to me how upstream plan to deal with the C extension
+# interface going forward, so let's just mimic upstream for now.
+%global pypy_include_dir  %{pypyprefix}/include
+mkdir -p %{buildroot}/%{pypy_include_dir}
+cp include/*.h %{buildroot}/%{pypy_include_dir}
+
 
 # Capture the RPython source code files from the build within the debuginfo
 # package (rhbz#666975)
@@ -509,20 +586,20 @@ cp -a pypy %{buildroot}%{pypy_debuginfo_dir}
 #   - the Makefile
 #   - typeids.txt
 #   - dynamic-symbols-*
-#find \
-#  %{buildroot}%{pypy_debuginfo_dir}  \
-#  \( -type f                         \
-#     -a                              \
-#     \! \( -name "*.py"              \
-#           -o                        \
-#           -name "Makefile"          \
-#           -o                        \
-#           -name "typeids.txt"       \
-#           -o                        \
-#           -name "dynamic-symbols-*" \
-#        \)                           \
-#  \)                                 \
-#  -delete
+find \
+  %{buildroot}%{pypy_debuginfo_dir}  \
+  \( -type f                         \
+     -a                              \
+     \! \( -name "*.py"              \
+           -o                        \
+           -name "Makefile"          \
+           -o                        \
+           -name "typeids.txt"       \
+           -o                        \
+           -name "dynamic-symbols-*" \
+        \)                           \
+  \)                                 \
+  -delete
 
 # Alternatively, we could simply keep everything.  This leads to a ~350MB
 # debuginfo package, but it makes it easy to hack on the Makefile and C build
@@ -543,26 +620,12 @@ cp -a pypy %{buildroot}%{pypy_debuginfo_dir}
 # Install the JIT trace mode for Emacs:
 %if %{with_emacs}
 mkdir -p %{buildroot}/%{_emacs_sitelispdir}
-cp -a rpython/jit/tool/pypytrace-mode.el %{buildroot}/%{_emacs_sitelispdir}/%{name}trace-mode.el
-cp -a rpython/jit/tool/pypytrace-mode.elc %{buildroot}/%{_emacs_sitelispdir}/%{name}trace-mode.elc
+cp -a rpython/jit/tool/pypytrace-mode.el* %{buildroot}/%{_emacs_sitelispdir}
 %endif
 
-# Move files to the right places and remove unnecessary files
-ln -sf %{pypyprefix}/bin/%{name} %{buildroot}/%{_bindir}/%{name}
-mv %{buildroot}/%{pypyprefix}/bin/libpypy-c.so %{buildroot}/%{_libdir}
-rm -rf %{buildroot}/%{_libdir}/%{name}-%{version}.tar.bz2
-rm -rf %{buildroot}/%{pypyprefix}/LICENSE
-rm -rf %{buildroot}/%{pypyprefix}/README.rst
-rm -rf %{buildroot}/%{pypyprefix}/README.rst
-rm -rf %{buildroot}/%{pypy_include_dir}/README
-chrpath --delete %{buildroot}/%{pypyprefix}/bin/%{name}
-
 # Install macros for rpm:
-mkdir -p %{buildroot}/%{_rpmconfigdir}/macros.d
-install -m 644 %{SOURCE2} %{buildroot}/%{_rpmconfigdir}/macros.d
-
-# Remove build script from the package
-#rm %{buildroot}/%{pypyprefix}/lib_pypy/ctypes_config_cache/rebuild.py
+mkdir -p %{buildroot}/%{_sysconfdir}/rpm
+install -m 644 %{SOURCE2} %{buildroot}/%{_sysconfdir}/rpm
 
 %check
 topdir=$(pwd)
@@ -593,7 +656,7 @@ CheckPyPy() {
 
     # Use regrtest to explicitly list all tests:
     ( ./$ExeName -c \
-         "from test.regrtest import findtests; print('\n'.join(findtests()))"
+         "from test.regrtest import findtests; print '\n'.join(findtests())"
     ) > testnames.txt
 
     # Skip some tests:
@@ -677,61 +740,60 @@ CheckPyPy() {
     echo "--------------------------------------------------------------"
 }
 
-#python testrunner/runner.py --logfile=pytest-A.log --config=pypy/pytest-A.cfg --config=pypy/pytest-A.py --root=pypy --timeout=3600
-#python pypy/test_all.py --pypy=pypy/goal/pypy --timeout=3600 --resultlog=cpython.log lib-python
-#python pypy/test_all.py --pypy=pypy/goal/pypy --resultlog=pypyjit.log pypy/module/pypyjit/test
-#pypy/goal/pypy pypy/test_all.py --resultlog=pypyjit_new.log
-
 %if %{run_selftests}
-CheckPyPy %{name}-c
+CheckPyPy %{name}
 
 %if 0%{with_stackless}
-CheckPyPy %{name}-c-stackless
+CheckPyPy %{name}-stackless
 %endif
 
 %endif # run_selftests
 
-# Because there's a bunch of binary subpackages and creating
-# /usr/share/licenses/pypy3-this and /usr/share/licenses/pypy3-that
-# is just confusing for the user.
-%global _docdir_fmt %{name}
+
+%clean
+rm -rf $RPM_BUILD_ROOT
+
 
 %files libs
-%license LICENSE
-%doc README.rst
+%defattr(-,root,root,-)
+%doc LICENSE README.rst
 
 %dir %{pypyprefix}
 %dir %{pypyprefix}/lib-python
-%{_libdir}/libpypy-c.so
+%{pypyprefix}/lib-python/stdlib-version.txt
 %{pypyprefix}/lib-python/%{pylibver}/
+%{pypyprefix}/lib-python/conftest.py*
 %{pypyprefix}/lib_pypy/
 %{pypyprefix}/site-packages/
 %if %{with_emacs}
-%{_emacs_sitelispdir}/%{name}trace-mode.el
-%{_emacs_sitelispdir}/%{name}trace-mode.elc
+%{_emacs_sitelispdir}/pypytrace-mode.el
+%{_emacs_sitelispdir}/pypytrace-mode.elc
 %endif
 
 %files
-%license LICENSE
-%doc README.rst
-%{_bindir}/%{name}
-%{pypyprefix}/bin/%{name}
+%defattr(-,root,root,-)
+%doc LICENSE README.rst
+%{_bindir}/pypy
+%{pypyprefix}/pypy
 
 %files devel
+%defattr(-,root,root,-)
 %dir %{pypy_include_dir}
 %{pypy_include_dir}/*.h
-%{pypy_include_dir}/numpy
-%{_rpmconfigdir}/macros.d/macros.%{name}
+%config(noreplace) %{_sysconfdir}/rpm/macros.%{name}
 
 %if 0%{with_stackless}
 %files stackless
-%license LICENSE
-%doc README.rst
-%{_bindir}/%{name}-stackless
+%defattr(-,root,root,-)
+%doc LICENSE README.rst
+%{_bindir}/pypy-stackless
 %endif
 
 
 %changelog
+* Fri Aug 05 2016 Michal Cyprian <mcyprian@redhat.com> - 1:2.0.2-1
+- Revert previous upgrade because of broken virtualenvs
+
 * Thu Jun 30 2016 Miro Hrončok <mhroncok@redhat.com> - 5.0.1-4
 - Fix for: CVE-2016-0772 python: smtplib StartTLS stripping attack
 - Raise an error when STARTTLS fails
@@ -933,4 +995,3 @@ python 2.6.5 (patch 2)
 
 * Wed Apr 28 2010 David Malcolm <dmalcolm@redhat.com> - 1.2-1
 - initial packaging
-
