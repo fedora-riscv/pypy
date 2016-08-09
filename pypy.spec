@@ -3,7 +3,7 @@
 Name:           pypy
 Version:        2.0.2
 Release:        1%{?dist}
-Epoch:          1
+Epoch:          2
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -13,7 +13,7 @@ Group:          Development/Languages
 # licensing terms
 License:        MIT and Python and UCD
 URL:            http://pypy.org/
-BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildRoot:      %{_tmppath}/%{name}-%{epoch}:%{version}-%{release}-root-%(%{__id_u} -n)
 
 # High-level configuration of the build:
 
@@ -233,7 +233,7 @@ BuildRequires:  emacs
 %endif
 
 # Metadata for the core package (the JIT build):
-Requires: pypy-libs = %{version}-%{release}
+Requires: pypy-libs = %{epoch}:%{version}-%{release}
 
 %description
 PyPy's implementation of Python, featuring a Just-In-Time compiler on some CPU
@@ -268,14 +268,14 @@ Summary:  Development tools for working with PyPy
 %description devel
 Header files for building C extension modules against PyPy
 
-Requires: pypy = %{version}-%{release}
+Requires: pypy = %{epoch}:%{version}-%{release}
 
 
 %if 0%{with_stackless}
 %package stackless
 Group:    Development/Languages
 Summary:  Stackless Python interpreter built using PyPy
-Requires: pypy-libs = %{version}-%{release}
+Requires: pypy-libs = %{epoch}:%{version}-%{release}
 %description stackless
 Build of PyPy with support for micro-threads for massive concurrency
 %endif
@@ -284,7 +284,7 @@ Build of PyPy with support for micro-threads for massive concurrency
 %package stackless
 Group:    Development/Languages
 Summary:  Stackless Python interpreter built using PyPy
-Requires: pypy-libs = %{version}-%{release}
+Requires: pypy-libs = %{epoch}:%{version}-%{release}
 %description stackless
 Build of PyPy with support for micro-threads for massive concurrency
 %endif
@@ -791,7 +791,7 @@ rm -rf $RPM_BUILD_ROOT
 
 
 %changelog
-* Fri Aug 05 2016 Michal Cyprian <mcyprian@redhat.com> - 1:2.0.2-1
+* Fri Aug 05 2016 Michal Cyprian <mcyprian@redhat.com> - 1:2.0.2-2
 - Revert previous upgrade because of broken virtualenvs
 
 * Thu Jun 30 2016 Miro Hrončok <mhroncok@redhat.com> - 5.0.1-4
