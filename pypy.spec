@@ -2,8 +2,8 @@
 
 Name:           pypy
 Version:        2.0.2
-Release:        1%{?dist}
-Epoch:          2
+Release:        2%{?dist}
+Epoch:          1
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
