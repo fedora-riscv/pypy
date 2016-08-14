@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        5.0.1
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -10,6 +10,9 @@ Group:          Development/Languages
 # licensing terms
 License:        MIT and Python and UCD
 URL:            http://pypy.org/
+
+# Not currently supported on these arches
+ExcludeArch: aarch64 s390 s390x
 
 # High-level configuration of the build:
 
@@ -719,6 +722,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Sun Aug 14 2016 Peter Robinson <pbrobinson@fedoraproject.org> 5.0.1-5
+- Update supported architectures list
+
 * Thu Jul 21 2016 Miro Hrončok <mhroncok@redhat.com> - 5.0.1-4
 - Build with gdbm support
 - rhbz#1358482
