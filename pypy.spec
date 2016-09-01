@@ -1,6 +1,6 @@
 Name:           pypy
-Version:        5.0.1
-Release:        5%{?dist}
+Version:        5.4.0
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -93,6 +93,8 @@ ExcludeArch: aarch64 s390 s390x
 # it on the other archs.  The resulting binary will typically be slower than
 # CPython for the latter case.
 
+%global src_name %{name}2-v%{version}-src
+
 %ifarch %{ix86} x86_64 %{arm} %{power64}
 %global with_jit 1
 %else
@@ -133,35 +135,29 @@ ExcludeArch: aarch64 s390 s390x
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0: https://bitbucket.org/pypy/pypy/downloads/%{name}-%{version}-src.tar.bz2
+Source0: https://bitbucket.org/pypy/pypy/downloads/%{src_name}.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
 Source2: macros.%{name}
 
-# By default, if built at a tty, the translation process renders a Mandelbrot
-# set to indicate progress.
-# This obscures useful messages, and may waste CPU cycles, so suppress it, and
-# merely render dots:
-Patch0: pypy-1.2-suppress-mandelbrot-set-during-tty-build.patch
-
 # Patch pypy.translator.platform so that stdout from "make" etc gets logged,
 # rather than just stderr, so that the command-line invocations of the compiler
 # and linker are captured:
-Patch1: 006-always-log-stdout.patch
+Patch0: 006-always-log-stdout.patch
 
 # Disable the printing of a quote from IRC on startup (these are stored in
 # ROT13 form in lib_pypy/_pypy_irc_topic.py).  Some are cute, but some could
 # cause confusion for end-users (and many are in-jokes within the PyPy
 # community that won't make sense outside of it).  [Sorry to be a killjoy]
-Patch2: 007-remove-startup-message.patch
+Patch1: 007-remove-startup-message.patch
 
 # CVE-2016-0772 python: smtplib StartTLS stripping attack
 # rhbz#1303647: https://bugzilla.redhat.com/show_bug.cgi?id=1303647
 # rhbz#1351679: https://bugzilla.redhat.com/show_bug.cgi?id=1351679
 # FIXED UPSTREAM: https://hg.python.org/cpython/rev/b3ce713fb9be
 # Raise an error when STARTTLS fails
-Patch3: 009-raise-an-error-when-STARTTLS-fails.patch
+Patch2: 009-raise-an-error-when-STARTTLS-fails.patch
 
 # Build-time requirements:
 
@@ -275,11 +271,7 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%setup -n %{name}-%{version}-src
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
+%autosetup -p1 -n %{src_name}
 # Replace /usr/local/bin/python shebangs with /usr/bin/python:
 find -name "*.py" -exec \
   sed \
@@ -710,7 +702,7 @@ CheckPyPy %{name}-c-stackless
 %files devel
 %dir %{pypy_include_dir}
 %{pypy_include_dir}/*.h
-%{pypy_include_dir}/numpy
+%{pypy_include_dir}/_numpypy
 %{_rpmconfigdir}/macros.d/macros.%{name}
 
 %if 0%{with_stackless}
@@ -722,6 +714,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Thu Sep 01 2016 Michal Cyprian <mcyprian@redhat.com> - 5.4.0-1
+- Update to 5.4.0
+
 * Sun Aug 14 2016 Peter Robinson <pbrobinson@fedoraproject.org> 5.0.1-5
 - Update supported architectures list
 
