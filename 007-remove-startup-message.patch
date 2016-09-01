@@ -5,8 +5,8 @@ diff -rup pypy-pypy-f66246c46ca3/lib_pypy/_pypy_interact.py pypy-pypy-f66246c46c
  irc_header = "And now for something completely different"
  
  
--def interactive_console(mainmodule=None, quiet=False):
-+def interactive_console(mainmodule=None, quiet=True):
+-def interactive_console(mainmodule=None, quiet=False, future_flags=0):
++def interactive_console(mainmodule=None, quiet=True, future_flags=0):
      # set sys.{ps1,ps2} just before invoking the interactive interpreter. This
      # mimics what CPython does in pythonrun.c
      if not hasattr(sys, 'ps1'):
