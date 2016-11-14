@@ -1,5 +1,5 @@
 Name:           pypy
-Version:        5.4.0
+Version:        5.6.0
 Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
@@ -12,7 +12,7 @@ License:        MIT and Python and UCD
 URL:            http://pypy.org/
 
 # Not currently supported on these arches
-ExcludeArch: aarch64 s390 s390x
+ExcludeArch: aarch64 s390
 
 # High-level configuration of the build:
 
@@ -96,7 +96,7 @@ ExcludeArch: aarch64 s390 s390x
 %global src_name %{name}2-v%{version}-src
 
 %ifarch %{ix86} x86_64 %{arm} %{power64}
-%global with_jit 1
+%global with_jit 0
 %else
 %global with_jit 0
 %endif
@@ -152,13 +152,6 @@ Patch0: 006-always-log-stdout.patch
 # community that won't make sense outside of it).  [Sorry to be a killjoy]
 Patch1: 007-remove-startup-message.patch
 
-# CVE-2016-0772 python: smtplib StartTLS stripping attack
-# rhbz#1303647: https://bugzilla.redhat.com/show_bug.cgi?id=1303647
-# rhbz#1351679: https://bugzilla.redhat.com/show_bug.cgi?id=1351679
-# FIXED UPSTREAM: https://hg.python.org/cpython/rev/b3ce713fb9be
-# Raise an error when STARTTLS fails
-Patch2: 009-raise-an-error-when-STARTTLS-fails.patch
-
 # Build-time requirements:
 
 # pypy's can be rebuilt using itself, rather than with CPython; doing so
@@ -167,7 +160,7 @@ Patch2: 009-raise-an-error-when-STARTTLS-fails.patch
 # Turn it off with this boolean, to revert back to rebuilding using CPython
 # and avoid a cycle in the build-time dependency graph:
 
-%global use_self_when_building 1
+%global use_self_when_building 0
 %if 0%{use_self_when_building}
 BuildRequires: pypy
 %global bootstrap_python_interp pypy
@@ -380,7 +373,7 @@ BuildPyPy() {
 
     # Reduce memory usage on arm during installation
 %ifarch %{arm}
-PYPY_GC_MAX_DELTA=200MB pypy --jit loop_longevity=300 ../../rpython/bin/rpython -Ojit targetpypystandalone
+#PYPY_GC_MAX_DELTA=200MB pypy --jit loop_longevity=300 ../../rpython/bin/rpython -Ojit targetpypystandalone
 %endif
   
   # The generated C code leads to many thousands of warnings of the form:
@@ -714,6 +707,10 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Mon Nov 14 2016 Peter Robinson <pbrobinson@fedoraproject.org> 5.6.0-1
+- Update to 5.6.0
+- Bootstrap mode for Power64 and s390x
+
 * Thu Sep 01 2016 Michal Cyprian <mcyprian@redhat.com> - 5.4.0-1
 - Update to 5.4.0
 
