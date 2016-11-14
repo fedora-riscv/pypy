@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        5.6.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -95,8 +95,8 @@ ExcludeArch: aarch64 s390
 
 %global src_name %{name}2-v%{version}-src
 
-%ifarch %{ix86} x86_64 %{arm} %{power64}
-%global with_jit 0
+%ifarch %{ix86} x86_64 %{arm} %{power64} s390x
+%global with_jit 1
 %else
 %global with_jit 0
 %endif
@@ -160,7 +160,7 @@ Patch1: 007-remove-startup-message.patch
 # Turn it off with this boolean, to revert back to rebuilding using CPython
 # and avoid a cycle in the build-time dependency graph:
 
-%global use_self_when_building 0
+%global use_self_when_building 1
 %if 0%{use_self_when_building}
 BuildRequires: pypy
 %global bootstrap_python_interp pypy
@@ -373,7 +373,7 @@ BuildPyPy() {
 
     # Reduce memory usage on arm during installation
 %ifarch %{arm}
-#PYPY_GC_MAX_DELTA=200MB pypy --jit loop_longevity=300 ../../rpython/bin/rpython -Ojit targetpypystandalone
+PYPY_GC_MAX_DELTA=200MB pypy --jit loop_longevity=300 ../../rpython/bin/rpython -Ojit targetpypystandalone
 %endif
   
   # The generated C code leads to many thousands of warnings of the form:
@@ -707,6 +707,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Mon Nov 14 2016 Peter Robinson <pbrobinson@fedoraproject.org> 5.6.0-2
+- Post boostrap build
+
 * Mon Nov 14 2016 Peter Robinson <pbrobinson@fedoraproject.org> 5.6.0-1
 - Update to 5.6.0
 - Bootstrap mode for Power64 and s390x
