@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        5.6.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -288,6 +288,10 @@ find lib-python/%{pylibver} -name "*.py" -exec \
     \;
 
 %build
+%ifarch s390x
+# pypy3 requires z10 at least
+%global optflags %(echo %{optflags} | sed 's/-march=z9-109 /-march=z10 /')
+%endif
 
 BuildPyPy() {
   ExeName=$1
@@ -707,6 +711,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Tue Nov 29 2016 Peter Robinson <pbrobinson@fedoraproject.org> 5.6.0-3
+- set z10 as the base CPU for s390x build
+
 * Mon Nov 14 2016 Peter Robinson <pbrobinson@fedoraproject.org> 5.6.0-2
 - Post boostrap build
 
