@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        5.6.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -711,6 +711,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Sat Feb 11 2017 Fedora Release Engineering <releng@fedoraproject.org> - 5.6.0-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_26_Mass_Rebuild
+
 * Tue Nov 29 2016 Peter Robinson <pbrobinson@fedoraproject.org> 5.6.0-3
 - set z10 as the base CPU for s390x build
 
