@@ -172,7 +172,7 @@ BuildRequires: pypy
 BuildRequires: python26-devel
 %global bootstrap_python_interp python26
 %else
-BuildRequires: python-devel
+BuildRequires: python2-devel
 %global bootstrap_python_interp python
 %endif
 
