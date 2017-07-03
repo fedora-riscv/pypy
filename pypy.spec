@@ -1,5 +1,7 @@
+%define ver_name %{name}2
+
 Name:           pypy
-Version:        5.7.0
+Version:        5.8.0
 Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
@@ -93,7 +95,7 @@ ExcludeArch: aarch64 s390
 # it on the other archs.  The resulting binary will typically be slower than
 # CPython for the latter case.
 
-%global src_name %{name}2-v%{version}-src
+%global src_name %{ver_name}-v%{version}-src
 
 %ifarch %{ix86} x86_64 %{arm} %{power64} s390x
 %global with_jit 1
@@ -172,7 +174,7 @@ BuildRequires: pypy
 BuildRequires: python26-devel
 %global bootstrap_python_interp python26
 %else
-BuildRequires: python-devel
+BuildRequires: python2-devel
 %global bootstrap_python_interp python
 %endif
 
@@ -216,6 +218,8 @@ BuildRequires:  emacs
 
 # Metadata for the core package (the JIT build):
 Requires: %{name}-libs%{?_isa} = %{version}-%{release}
+Provides: %{ver_name} = %{version}-%{release}
+Provides: %{ver_name}%{_isa} = %{version}-%{release}
 
 %description
 PyPy's implementation of Python, featuring a Just-In-Time compiler on some CPU
@@ -240,6 +244,8 @@ Summary:  Run-time libraries used by PyPy implementations of Python
 Requires: emacs-filesystem >= %{_emacs_version}
 %endif
 
+Provides: %{ver_name}-libs = %{version}-%{release}
+Provides: %{ver_name}-libs%{_isa} = %{version}-%{release}
 %description libs
 Libraries required by the various PyPy implementations of Python.
 
@@ -248,6 +254,8 @@ Libraries required by the various PyPy implementations of Python.
 Group:    Development/Languages
 Summary:  Development tools for working with PyPy
 Requires: %{name}%{?_isa} = %{version}-%{release}
+Provides: %{ver_name}-devel = %{version}-%{release}
+Provides: %{ver_name}-devel%{_isa} = %{version}-%{release}
 
 %description devel
 Header files for building C extension modules against PyPy
@@ -258,6 +266,8 @@ Header files for building C extension modules against PyPy
 Group:    Development/Languages
 Summary:  Stackless Python interpreter built using PyPy
 Requires: %{name}-libs%{?_isa} = %{version}-%{release}
+Provides: %{ver_name}-stackless = %{version}-%{release}
+Provides: %{ver_name}-stackless%{_isa} = %{version}-%{release}
 %description stackless
 Build of PyPy with support for micro-threads for massive concurrency
 %endif
@@ -711,6 +721,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Mon Jun 26 2017 Michal Cyprian <mcyprian@redhat.com> - 5.8.0-1
+- Update to 5.8.0, add pypy2 provides
+
 * Tue Mar 21 2017 Michal Cyprian <mcyprian@redhat.com> - 5.7.0-1
 - Update to 5.7.0
 
