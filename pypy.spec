@@ -205,7 +205,7 @@ BuildRequires:  gc-devel
 BuildRequires:  time
 
 # For use in the selftests, for imposing a per-test timeout:
-BuildRequires:  perl
+BuildRequires:  perl-interpreter
 %endif
 
 # All arches have execstack
