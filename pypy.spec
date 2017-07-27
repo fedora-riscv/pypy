@@ -2,7 +2,7 @@
 
 Name:           pypy
 Version:        5.8.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -721,6 +721,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Thu Jul 27 2017 Fedora Release Engineering <releng@fedoraproject.org> - 5.8.0-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Mass_Rebuild
+
 * Mon Jun 26 2017 Michal Cyprian <mcyprian@redhat.com> - 5.8.0-1
 - Update to 5.8.0, add pypy2 provides
 
