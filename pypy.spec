@@ -1,8 +1,8 @@
 %define ver_name %{name}2
 
 Name:           pypy
-Version:        5.8.0
-Release:        3%{?dist}
+Version:        5.9.0
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -163,7 +163,11 @@ Patch1: 007-remove-startup-message.patch
 # and avoid a cycle in the build-time dependency graph:
 
 %global use_self_when_building 1
-%if 0%{use_self_when_building}
+# Getting strange error on ppc64 arch when building with PyPy,
+# use CPython for ppc64 temporarily
+# https://koji.fedoraproject.org/koji/taskinfo?taskID=23000326
+# TODO: resolve this and remove power64 part of condition
+%ifnarch %{power64} && 0%{use_self_when_building}
 BuildRequires: pypy
 %global bootstrap_python_interp pypy
 %else
@@ -175,6 +179,7 @@ BuildRequires: python26-devel
 %global bootstrap_python_interp python26
 %else
 BuildRequires: python2-devel
+BuildRequires: python-pycparser
 %global bootstrap_python_interp python
 %endif
 
@@ -385,11 +390,6 @@ BuildPyPy() {
 
 %endif
 
-    # Reduce memory usage on arm during installation
-%ifarch %{arm}
-PYPY_GC_MAX_DELTA=200MB pypy --jit loop_longevity=300 ../../rpython/bin/rpython -Ojit targetpypystandalone
-%endif
-  
   # The generated C code leads to many thousands of warnings of the form:
   #   warning: variable 'l_v26003' set but not used [-Wunused-but-set-variable]
   # Suppress them:
@@ -399,6 +399,10 @@ PYPY_GC_MAX_DELTA=200MB pypy --jit loop_longevity=300 ../../rpython/bin/rpython 
   # builds (of other configurations):
   if test -x './pypy' ; then
     INTERP='./pypy'
+    %ifarch %{arm}
+      # Reduce memory usage on arm during installation
+      PYPY_GC_MAX_DELTA=200MB $INTERP --jit loop_longevity=300 ../../rpython/bin/rpython -Ojit targetpypystandalone
+    %endif
   else
     # First pypy build within this rpm build?
     # Fall back to using the bootstrap python interpreter, which might be a
@@ -721,6 +725,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Mon Oct 23 2017 Michal Cyprian <mcyprian@redhat.com> - 5.9.0-1
+- Update to 5.9.0
+
 * Thu Aug 03 2017 Fedora Release Engineering <releng@fedoraproject.org> - 5.8.0-3
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Binutils_Mass_Rebuild
 
