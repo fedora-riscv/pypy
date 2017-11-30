@@ -2,7 +2,7 @@
 
 Name:           pypy
 Version:        5.8.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -478,6 +478,30 @@ find \
 
 execstack --clear-execstack %{buildroot}/%{pypyprefix}/bin/pypy
 
+# Bytecompile all of the .py files we ship, using our pypy binary, giving us
+# .pyc files for pypy.  The script actually does the work twice (passing in -O
+# the second time) but it's simplest to reuse that script.
+#
+# The script has special-casing for .py files below
+#    /usr/lib{64}/python[0-9].[0-9]
+# but given that we're installing into a different path, the supplied "default"
+# implementation gets used instead.
+#
+# Note that some of the test files deliberately contain syntax errors, so
+# we pass 0 for the second argument ("errors_terminate"):
+/usr/lib/rpm/brp-python-bytecompile \
+  %{buildroot}%{pypyprefix}/bin/%{name} \
+  0
+
+%{buildroot}%{pypyprefix}/bin/%{name} -c 'import _tkinter'
+%{buildroot}%{pypyprefix}/bin/%{name} -c 'import Tkinter'
+%{buildroot}%{pypyprefix}/bin/%{name} -c 'import _sqlite3'
+%{buildroot}%{pypyprefix}/bin/%{name} -c 'import _curses'
+%{buildroot}%{pypyprefix}/bin/%{name} -c 'import curses'
+%{buildroot}%{pypyprefix}/bin/%{name} -c 'import syslog'
+%{buildroot}%{pypyprefix}/bin/%{name} -c 'from _sqlite3 import *'
+
+
 # Header files for C extension modules.
 # Upstream's packaging process (pypy/tool/release/package.py)
 # creates an "include" subdir and copies all *.h/*.inl from "include" there
@@ -721,6 +745,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Thu Nov 30 2017 Miro Hrončok <mhroncok@redhat.com> - 5.8.0-4
+- Make sure to bytecompile the files and ship .pyc files (#1519238)
+
 * Thu Aug 03 2017 Fedora Release Engineering <releng@fedoraproject.org> - 5.8.0-3
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_27_Binutils_Mass_Rebuild
 
