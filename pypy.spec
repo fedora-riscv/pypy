@@ -1,8 +1,6 @@
-%define ver_name %{name}2
-
 Name:           pypy
 Version:        5.8.0
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -126,6 +124,8 @@ ExcludeArch: aarch64 s390
 %global pypy_include_dir  %{pypyprefix}/include
 %global pypyprefix %{_libdir}/%{name}-%{version}
 %global pylibver 2.7
+%global pymajorlibver 2
+%global ver_name  %{name}%{pymajorlibver}
 
 # We refer to this subdir of the source tree in a few places during the build:
 %global goal_dir pypy/goal
@@ -560,8 +560,12 @@ cp -a rpython/jit/tool/pypytrace-mode.el %{buildroot}/%{_emacs_sitelispdir}/%{na
 cp -a rpython/jit/tool/pypytrace-mode.elc %{buildroot}/%{_emacs_sitelispdir}/%{name}trace-mode.elc
 %endif
 
+# Create executables pypy, pypy2 and pypy2.7
+ln -sf %{pypyprefix}/bin/%{name} %{buildroot}%{_bindir}/%{name}%{pylibver}
+ln -sf %{_bindir}/%{name}%{pylibver} %{buildroot}%{_bindir}/%{name}%{pymajorlibver}
+ln -sf %{_bindir}/%{name}%{pymajorlibver} %{buildroot}%{_bindir}/%{name}
+
 # Move files to the right places and remove unnecessary files
-ln -sf %{pypyprefix}/bin/%{name} %{buildroot}/%{_bindir}/%{name}
 mv %{buildroot}/%{pypyprefix}/bin/libpypy-c.so %{buildroot}/%{_libdir}
 rm -rf %{buildroot}/%{_libdir}/%{name}-%{version}.tar.bz2
 rm -rf %{buildroot}/%{pypyprefix}/LICENSE
@@ -728,6 +732,8 @@ CheckPyPy %{name}-c-stackless
 %license LICENSE
 %doc README.rst
 %{_bindir}/%{name}
+%{_bindir}/%{name}%{pylibver}
+%{_bindir}/%{name}%{pymajorlibver}
 %{pypyprefix}/bin/%{name}
 
 %files devel
@@ -745,6 +751,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Tue Dec 12 2017 Michal Cyprian <mcyprian@redhat.com> - 5.8.0-5
+- Add pypy2 and pypy2.7 symlinks
+
 * Thu Nov 30 2017 Miro Hrončok <mhroncok@redhat.com> - 5.8.0-4
 - Make sure to bytecompile the files and ship .pyc files (#1519238)
 
