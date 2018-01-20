@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        5.9.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -755,6 +755,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Sat Jan 20 2018 Björn Esser <besser82@fedoraproject.org> - 5.9.0-4
+- Rebuilt for switch to libxcrypt
+
 * Fri Dec 08 2017 Michal Cyprian <mcyprian@redhat.com> - 5.9.0-3
 - Add pypy2 and pypy2.7 symlinks
 
