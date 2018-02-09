@@ -1,6 +1,6 @@
 Name:           pypy
 Version:        5.9.0
-Release:        5%{?dist}
+Release:        6%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -755,6 +755,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Fri Feb 09 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 5.9.0-6
+- Escape macros in %%changelog
+
 * Fri Feb 09 2018 Fedora Release Engineering <releng@fedoraproject.org> - 5.9.0-5
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_28_Mass_Rebuild
 
@@ -841,7 +844,7 @@ CheckPyPy %{name}-c-stackless
 - Upgrade to 2.6.1
 
 * Wed Aug 26 2015 Michal Cyprian <mcyprian@redhat.com> - 2.6.0-5
-- Use %{bootstrap_python_interp} macro to run package.py
+- Use %%{bootstrap_python_interp} macro to run package.py
 
 * Wed Aug 26 2015 Michal Cyprian <mcyprian@redhat.com> - 2.6.0-4
 - Fix debuginfo missing sources
