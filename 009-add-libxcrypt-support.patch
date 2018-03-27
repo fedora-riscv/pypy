@@ -1,0 +1,13 @@
+diff --git a/pypy/module/crypt/interp_crypt.py b/pypy/module/crypt/interp_crypt.py
+index d227b6a..da969e6 100644
+--- a/pypy/module/crypt/interp_crypt.py
++++ b/pypy/module/crypt/interp_crypt.py
+@@ -6,7 +6,7 @@ import sys
+ if sys.platform.startswith('darwin'):
+     eci = ExternalCompilationInfo()
+ else:
+-    eci = ExternalCompilationInfo(libraries=['crypt'])
++    eci = ExternalCompilationInfo(libraries=['crypt'], includes=['crypt.h'])
+ c_crypt = rffi.llexternal('crypt', [rffi.CCHARP, rffi.CCHARP], rffi.CCHARP,
+                           compilation_info=eci, releasegil=False)
+ 
