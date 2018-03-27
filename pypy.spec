@@ -1,6 +1,6 @@
 Name:           pypy
-Version:        5.9.0
-Release:        6%{?dist}
+Version:        5.10.0
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -153,6 +153,11 @@ Patch0: 006-always-log-stdout.patch
 # cause confusion for end-users (and many are in-jokes within the PyPy
 # community that won't make sense outside of it).  [Sorry to be a killjoy]
 Patch1: 007-remove-startup-message.patch
+
+# Glibc's libcrypt was replaced with libxcrypt in f28, crypt.h header has
+# to be added to privent compilation error.
+# https://fedoraproject.org/wiki/Changes/Replace_glibc_libcrypt_with_libxcrypt
+Patch2: 009-add-libxcrypt-support.patch
 
 # Build-time requirements:
 
@@ -585,6 +590,11 @@ install -m 644 %{SOURCE2} %{buildroot}/%{_rpmconfigdir}/macros.d
 # Remove build script from the package
 #rm %{buildroot}/%{pypyprefix}/lib_pypy/ctypes_config_cache/rebuild.py
 
+# since 5.10.0, the debug binaries are built and shipped, making the
+# pypy package ~350 MiB. let's remove them here for now and TODO figure out why
+rm -f %{buildroot}%{pypyprefix}/bin/pypy.debug
+rm -f %{buildroot}%{pypyprefix}/bin/libpypy-c.so.debug
+
 %check
 topdir=$(pwd)
 
@@ -755,6 +765,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Wed Mar 21 2018 Michal Cyprian <mcyprian@redhat.com> - 5.10.0-1
+- Update to 5.10.0
+
 * Fri Feb 09 2018 Igor Gnatenko <ignatenkobrain@fedoraproject.org> - 5.9.0-6
 - Escape macros in %%changelog
 
