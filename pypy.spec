@@ -1,6 +1,7 @@
+%global basever 5.10
 Name:           pypy
-Version:        5.10.0
-Release:        1%{?dist}
+Version:        %{basever}.0
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -122,7 +123,7 @@ ExcludeArch: aarch64 s390
 %global run_selftests 1
 
 %global pypy_include_dir  %{pypyprefix}/include
-%global pypyprefix %{_libdir}/%{name}-%{version}
+%global pypyprefix %{_libdir}/%{name}-%{basever}
 %global pylibver 2.7
 %global pymajorlibver 2
 %global ver_name  %{name}%{pymajorlibver}
@@ -465,8 +466,8 @@ mkdir -p %{buildroot}/%{pypyprefix}
 #%endif
 
 
-# Run installing script,  archive-name  %{name}-%{version} in %{buildroot}/%{_libdir} == %{pypyprefix} 
-%{bootstrap_python_interp} pypy/tool/release/package.py --archive-name %{name}-%{version} --builddir %{buildroot}/%{_libdir}
+# Run installing script,  archive-name  %{name}-%{basever} in %{buildroot}/%{_libdir} == %{pypyprefix}
+%{bootstrap_python_interp} pypy/tool/release/package.py --archive-name %{name}-%{basever} --builddir %{buildroot}/%{_libdir}
 
 # Remove shebang lines from .py files that aren't executable, and
 # remove executability from .py files that don't have a shebang line:
@@ -576,7 +577,7 @@ ln -sf %{_bindir}/%{name}%{pymajorlibver} %{buildroot}%{_bindir}/%{name}
 
 # Move files to the right places and remove unnecessary files
 mv %{buildroot}/%{pypyprefix}/bin/libpypy-c.so %{buildroot}/%{_libdir}
-rm -rf %{buildroot}/%{_libdir}/%{name}-%{version}.tar.bz2
+rm -rf %{buildroot}/%{_libdir}/%{name}-%{basever}.tar.bz2
 rm -rf %{buildroot}/%{pypyprefix}/LICENSE
 rm -rf %{buildroot}/%{pypyprefix}/README.rst
 rm -rf %{buildroot}/%{pypyprefix}/README.rst
@@ -765,6 +766,10 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Tue Mar 27 2018 Michal Cyprian <mcyprian@redhat.com> - 5.10.0-2
+- Remove the rightmost version number from the path
+- rhbz#1516885: https://bugzilla.redhat.com/show_bug.cgi?id=1516885
+
 * Wed Mar 21 2018 Michal Cyprian <mcyprian@redhat.com> - 5.10.0-1
 - Update to 5.10.0
 
