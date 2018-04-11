@@ -1,7 +1,7 @@
 %global basever 5.10
 Name:           pypy
 Version:        %{basever}.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -233,6 +233,7 @@ BuildRequires:  emacs
 Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 Provides: %{ver_name} = %{version}-%{release}
 Provides: %{ver_name}%{_isa} = %{version}-%{release}
+Provides: %{ver_name}(abi) = %{basever}
 
 %description
 PyPy's implementation of Python, featuring a Just-In-Time compiler on some CPU
@@ -770,6 +771,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Wed Apr 11 2018 Miro Hrončok <mhroncok@redhat.com> - 5.10.0-4
+- Provide pypy2(abi) = 5.10
+
 * Tue Apr 10 2018 Miro Hrončok <mhroncok@redhat.com> - 5.10.0-3
 - RPM macros improvements
 
