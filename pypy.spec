@@ -1,7 +1,7 @@
 %global basever 5.10
 Name:           pypy
 Version:        %{basever}.0
-Release:        2%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -142,7 +142,9 @@ Source0: https://bitbucket.org/pypy/pypy/downloads/%{src_name}.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
-Source2: macros.%{name}
+Source1: macros.%{name}
+#  __pypy2, pypy2_sitelib, pypy2_sitearch
+Source2: macros.%{name}%{pymajorlibver}
 
 # Patch pypy.translator.platform so that stdout from "make" etc gets logged,
 # rather than just stderr, so that the command-line invocations of the compiler
@@ -231,6 +233,7 @@ BuildRequires:  emacs
 Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 Provides: %{ver_name} = %{version}-%{release}
 Provides: %{ver_name}%{_isa} = %{version}-%{release}
+Provides: %{ver_name}(abi) = %{basever}
 
 %description
 PyPy's implementation of Python, featuring a Just-In-Time compiler on some CPU
@@ -586,6 +589,7 @@ chrpath --delete %{buildroot}/%{pypyprefix}/bin/%{name}
 
 # Install macros for rpm:
 mkdir -p %{buildroot}/%{_rpmconfigdir}/macros.d
+install -m 644 %{SOURCE1} %{buildroot}/%{_rpmconfigdir}/macros.d
 install -m 644 %{SOURCE2} %{buildroot}/%{_rpmconfigdir}/macros.d
 
 # Remove build script from the package
@@ -756,6 +760,7 @@ CheckPyPy %{name}-c-stackless
 %{pypy_include_dir}/*.h
 %{pypy_include_dir}/_numpypy
 %{_rpmconfigdir}/macros.d/macros.%{name}
+%{_rpmconfigdir}/macros.d/macros.%{name}%{pymajorlibver}
 
 %if 0%{with_stackless}
 %files stackless
@@ -766,6 +771,12 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Wed Apr 11 2018 Miro Hrončok <mhroncok@redhat.com> - 5.10.0-4
+- Provide pypy2(abi) = 5.10
+
+* Tue Apr 10 2018 Miro Hrončok <mhroncok@redhat.com> - 5.10.0-3
+- RPM macros improvements
+
 * Tue Mar 27 2018 Michal Cyprian <mcyprian@redhat.com> - 5.10.0-2
 - Remove the rightmost version number from the path
 - rhbz#1516885: https://bugzilla.redhat.com/show_bug.cgi?id=1516885
