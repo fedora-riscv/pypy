@@ -1,7 +1,7 @@
-%global basever 5.10
+%global basever 6.0
 Name:           pypy
 Version:        %{basever}.0
-Release:        4%{?dist}
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -771,6 +771,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Thu Apr 26 2018 Michal Cyprian <mcyprian@redhat.com> - 6.0.0-1
+- Update to 6.0.0
+
 * Wed Apr 11 2018 Miro Hrončok <mhroncok@redhat.com> - 5.10.0-4
 - Provide pypy2(abi) = 5.10
 
