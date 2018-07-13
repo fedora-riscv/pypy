@@ -1,7 +1,7 @@
 %global basever 6.0
 Name:           pypy
 Version:        %{basever}.0
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -771,6 +771,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Fri Jul 13 2018 Fedora Release Engineering <releng@fedoraproject.org> - 6.0.0-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_29_Mass_Rebuild
+
 * Thu Apr 26 2018 Michal Cyprian <mcyprian@redhat.com> - 6.0.0-1
 - Update to 6.0.0
 
