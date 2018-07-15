@@ -106,7 +106,7 @@ ExcludeArch: aarch64 s390
 %global with_stackless 0
 
 # Should we build the emacs JIT-viewing mode?
-%if 0%{?rhel} == 5 || 0%{?rhel} == 6
+%if 0%{?rhel} == 6
 %global with_emacs 0
 %else
 %global with_emacs 1
@@ -177,19 +177,13 @@ Patch2: 009-add-libxcrypt-support.patch
 # TODO: resolve this and remove power64 part of condition
 %ifnarch %{power64} && 0%{use_self_when_building}
 BuildRequires: pypy
-%global bootstrap_python_interp pypy
+%global bootstrap_python_interp pypy2
 %else
 
-# Python 2.6 or later is needed, so on RHEL5 (2.4) we need to use the alternate
-# python26 rpm:
-%if 0%{?rhel} == 5
-BuildRequires: python26-devel
-%global bootstrap_python_interp python26
-%else
+
 BuildRequires: python2-devel
-BuildRequires: python-pycparser
-%global bootstrap_python_interp python
-%endif
+BuildRequires: python2-pycparser
+%global bootstrap_python_interp python2
 
 %endif
 
