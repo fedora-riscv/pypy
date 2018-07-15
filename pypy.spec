@@ -193,6 +193,8 @@ BuildRequires: python-pycparser
 
 %endif
 
+BuildRequires:  gcc
+
 BuildRequires:  libffi-devel
 BuildRequires:  tcl-devel
 BuildRequires:  tk-devel
