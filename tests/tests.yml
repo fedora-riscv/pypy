@@ -1,0 +1,18 @@
+---
+- hosts: localhost
+  roles:
+  - role: standard-test-basic
+    tags:
+    - classic
+    repositories:
+    - repo: "https://src.fedoraproject.org/tests/python.git"
+      dest: "python"
+    tests:
+    - smoke:
+        dir: python/smoke
+        run: METHOD=virtualenv PYTHON=pypy VERSION=2.7 ./venv.sh
+    required_packages:
+    - gcc
+    - /usr/bin/virtualenv
+    - python3-tox
+    - pypy-devel
