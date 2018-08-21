@@ -12,8 +12,9 @@ Group:          Development/Languages
 License:        MIT and Python and UCD
 URL:            http://pypy.org/
 
-# Not currently supported on these arches
-ExcludeArch: aarch64 s390
+# aarch64: Not available yet
+# ppc64: Broken on F29+ https://bugzilla.redhat.com/show_bug.cgi?id=1619690
+ExcludeArch: aarch64 %{power64}
 
 # High-level configuration of the build:
 
@@ -96,7 +97,7 @@ ExcludeArch: aarch64 s390
 
 %global src_name %{ver_name}-v%{version}-src
 
-%ifarch %{ix86} x86_64 %{arm} %{power64} s390x
+%ifarch %{ix86} x86_64 %{arm} s390x
 %global with_jit 1
 %else
 %global with_jit 0
