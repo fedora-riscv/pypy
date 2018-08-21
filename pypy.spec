@@ -18,6 +18,10 @@ ExcludeArch: aarch64 %{power64}
 
 # High-level configuration of the build:
 
+# Whether to use RPM build wheels from the python-{pip,setuptools}-wheel package
+# Uses upstream bundled prebuilt wheels otherwise
+%bcond_without rpmwheels
+
 # PyPy consists of an implementation of an interpreter (with JIT compilation)
 # for the full Python language  written in a high-level language, leaving many
 # of the implementation details as "pluggable" policies.
@@ -163,6 +167,11 @@ Patch1: 007-remove-startup-message.patch
 # https://fedoraproject.org/wiki/Changes/Replace_glibc_libcrypt_with_libxcrypt
 Patch2: 009-add-libxcrypt-support.patch
 
+# Instead of bundled wheels, use our RPM packaged wheels from
+# /usr/share/python-wheels
+# We conditionally apply this, but we use autosetup, so we use Source here
+Source189: 189-use-rpm-wheels.patch
+
 # Build-time requirements:
 
 # pypy's can be rebuilt using itself, rather than with CPython; doing so
@@ -226,6 +235,14 @@ BuildRequires:  execstack
 BuildRequires:  emacs
 %endif
 
+# For %%autosetup -S git
+BuildRequires:  %{_bindir}/git
+
+%if %{with rpmwheels}
+BuildRequires: python-setuptools-wheel
+BuildRequires: python-pip-wheel
+%endif
+
 # Metadata for the core package (the JIT build):
 Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 Provides: %{ver_name} = %{version}-%{release}
@@ -253,6 +270,14 @@ Summary:  Run-time libraries used by PyPy implementations of Python
 # (This doesn't bring in all of emacs, just the directory structure)
 %if %{with_emacs}
 Requires: emacs-filesystem >= %{_emacs_version}
+%endif
+
+%if %{with rpmwheels}
+Requires: python-setuptools-wheel
+Requires: python-pip-wheel
+%else
+Provides: bundled(python3-pip) = 9.0.1
+Provides: bundled(python3-setuptools) = 28.8.0
 %endif
 
 Provides: %{ver_name}-libs = %{version}-%{release}
@@ -285,7 +310,14 @@ Build of PyPy with support for micro-threads for massive concurrency
 
 
 %prep
-%autosetup -p1 -n %{src_name}
+%autosetup -n %{src_name} -p1 -S git
+
+%if %{with rpmwheels}
+%apply_patch -m %(basename %{SOURCE189}) %{SOURCE189}
+rm lib-python/2.7/ensurepip/_bundled/*.whl
+rmdir lib-python/2.7/ensurepip/_bundled
+%endif
+
 # Replace /usr/local/bin/python shebangs with /usr/bin/python:
 find -name "*.py" -exec \
   sed \
@@ -768,6 +800,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Tue Aug 21 2018 Miro Hrončok <mhroncok@redhat.com> - 6.0.0-3
+- Use RPM packaged wheels
+
 * Fri Jul 13 2018 Fedora Release Engineering <releng@fedoraproject.org> - 6.0.0-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_29_Mass_Rebuild
 
