@@ -318,10 +318,10 @@ rm lib-python/2.7/ensurepip/_bundled/*.whl
 rmdir lib-python/2.7/ensurepip/_bundled
 %endif
 
-# Replace /usr/local/bin/python shebangs with /usr/bin/python:
-find -name "*.py" -exec \
+# Replace /usr/local/bin/python or /usr/bin/env python shebangs with /usr/bin/python2 or pypy2:
+find \( -name "*.py" -o -name "py.cleanup" \) -exec \
   sed \
-    -i -e "s|/usr/local/bin/python|/usr/bin/python|" \
+    -i -r -e "s@/usr/(local/)?bin/(env )?python(2|3)?@/usr/bin/%{bootstrap_python_interp}@" \
     "{}" \
     \;
 
