@@ -1,7 +1,7 @@
 %global basever 6.0
 Name:           pypy
 Version:        %{basever}.0
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
