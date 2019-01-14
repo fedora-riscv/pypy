@@ -1,7 +1,7 @@
 %global basever 6.0
 Name:           pypy
 Version:        %{basever}.0
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 Group:          Development/Languages
@@ -800,6 +800,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Mon Jan 14 2019 Björn Esser <besser82@fedoraproject.org> - 6.0.0-4
+- Rebuilt for libcrypt.so.2 (#1666033)
+
 * Tue Aug 21 2018 Miro Hrončok <mhroncok@redhat.com> - 6.0.0-3
 - Use RPM packaged wheels
 
