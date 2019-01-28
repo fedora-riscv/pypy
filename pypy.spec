@@ -4,7 +4,6 @@ Version:        %{basever}.0
 Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
-Group:          Development/Languages
 # LGPL and another free license we'd need to ask spot about are present in some
 # java jars that we're not building with atm (in fact, we're deleting them
 # before building).  If we restore those we'll have to work out the new
@@ -263,7 +262,6 @@ CPU architecture.
 
 
 %package libs
-Group:    Development/Languages
 Summary:  Run-time libraries used by PyPy implementations of Python
 
 # We supply an emacs mode for the JIT viewer.
@@ -287,7 +285,6 @@ Libraries required by the various PyPy implementations of Python.
 
 
 %package devel
-Group:    Development/Languages
 Summary:  Development tools for working with PyPy
 Requires: %{name}%{?_isa} = %{version}-%{release}
 Provides: %{ver_name}-devel = %{version}-%{release}
@@ -299,7 +296,6 @@ Header files for building C extension modules against PyPy
 
 %if 0%{with_stackless}
 %package stackless
-Group:    Development/Languages
 Summary:  Stackless Python interpreter built using PyPy
 Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 Provides: %{ver_name}-stackless = %{version}-%{release}
