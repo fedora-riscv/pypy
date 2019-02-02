@@ -1,7 +1,7 @@
 %global basever 6.0
 Name:           pypy
 Version:        %{basever}.0
-Release:        4%{?dist}
+Release:        5%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # LGPL and another free license we'd need to ask spot about are present in some
@@ -796,6 +796,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Sat Feb 02 2019 Fedora Release Engineering <releng@fedoraproject.org> - 6.0.0-5
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_30_Mass_Rebuild
+
 * Mon Jan 14 2019 Björn Esser <besser82@fedoraproject.org> - 6.0.0-4
 - Rebuilt for libcrypt.so.2 (#1666033)
 
