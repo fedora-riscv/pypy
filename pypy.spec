@@ -1,7 +1,8 @@
-%global basever 6.0
+%global basever 7.0
 Name:           pypy
 Version:        %{basever}.0
-Release:        5%{?dist}
+%global pyversion 2.7
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # LGPL and another free license we'd need to ask spot about are present in some
@@ -142,7 +143,7 @@ ExcludeArch: aarch64 %{power64}
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0: https://bitbucket.org/pypy/pypy/downloads/%{src_name}.tar.bz2
+Source0: https://bitbucket.org/pypy/pypy/downloads/pypy%{pyversion}-v%{version}-src.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
@@ -246,6 +247,8 @@ BuildRequires: python-pip-wheel
 Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 Provides: %{ver_name} = %{version}-%{release}
 Provides: %{ver_name}%{_isa} = %{version}-%{release}
+Provides: pypy%{pyversion} = %{version}-%{release}
+Provides: pypy%{pyversion}%{_isa} = %{version}-%{release}
 Provides: %{ver_name}(abi) = %{basever}
 
 %description
@@ -280,6 +283,9 @@ Provides: bundled(python3-setuptools) = 28.8.0
 
 Provides: %{ver_name}-libs = %{version}-%{release}
 Provides: %{ver_name}-libs%{_isa} = %{version}-%{release}
+Provides: pypy%{pyversion}-libs = %{version}-%{release}
+Provides: pypy%{pyversion}-libs%{_isa} = %{version}-%{release}
+
 %description libs
 Libraries required by the various PyPy implementations of Python.
 
@@ -289,6 +295,8 @@ Summary:  Development tools for working with PyPy
 Requires: %{name}%{?_isa} = %{version}-%{release}
 Provides: %{ver_name}-devel = %{version}-%{release}
 Provides: %{ver_name}-devel%{_isa} = %{version}-%{release}
+Provides: pypy%{pyversion}-devel = %{version}-%{release}
+Provides: pypy%{pyversion}-devel%{_isa} = %{version}-%{release}
 
 %description devel
 Header files for building C extension modules against PyPy
@@ -300,13 +308,15 @@ Summary:  Stackless Python interpreter built using PyPy
 Requires: %{name}-libs%{?_isa} = %{version}-%{release}
 Provides: %{ver_name}-stackless = %{version}-%{release}
 Provides: %{ver_name}-stackless%{_isa} = %{version}-%{release}
+Provides: pypy%{pyversion}-stackless = %{version}-%{release}
+Provides: pypy%{pyversion}-stackless%{_isa} = %{version}-%{release}
 %description stackless
 Build of PyPy with support for micro-threads for massive concurrency
 %endif
 
 
 %prep
-%autosetup -n %{src_name} -p1 -S git
+%autosetup -n pypy%{pyversion}-v%{version}-src -p1 -S git
 
 %if %{with rpmwheels}
 %apply_patch -m %(basename %{SOURCE189}) %{SOURCE189}
@@ -796,6 +806,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Thu Feb 28 2019 Miro Hrončok <mhroncok@redhat.com> - 7.0.0-1
+- Update to 7.0.0
+
 * Sat Feb 02 2019 Fedora Release Engineering <releng@fedoraproject.org> - 6.0.0-5
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_30_Mass_Rebuild
 
