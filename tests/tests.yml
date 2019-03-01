@@ -13,6 +13,6 @@
         run: METHOD=virtualenv PYTHON=pypy VERSION=2.7 ./venv.sh
     required_packages:
     - gcc
-    - /usr/bin/virtualenv
+    - virtualenv
     - python3-tox
     - pypy-devel
