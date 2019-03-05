@@ -13,7 +13,8 @@ License:        MIT and Python and UCD
 URL:            http://pypy.org/
 
 # aarch64: Not available yet
-ExcludeArch: aarch64
+# ppc64: Broken on F29+ https://bugzilla.redhat.com/show_bug.cgi?id=1619690
+ExcludeArch: aarch64 %{power64}
 
 # High-level configuration of the build:
 
