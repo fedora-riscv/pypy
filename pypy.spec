@@ -1,6 +1,6 @@
-%global basever 7.0
+%global basever 7.1
 Name:           pypy
-Version:        %{basever}.0
+Version:        %{basever}.1
 %global pyversion 2.7
 Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
@@ -806,6 +806,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Thu May 30 2019 Miro Hrončok <mhroncok@redhat.com> - 7.1.1-1
+- Update to 7.1.1
+
 * Thu Feb 28 2019 Miro Hrončok <mhroncok@redhat.com> - 7.0.0-1
 - Update to 7.0.0
 
