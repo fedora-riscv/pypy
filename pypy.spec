@@ -616,7 +616,6 @@ ln -sf %{_bindir}/%{name}%{pymajorlibver} %{buildroot}%{_bindir}/%{name}
 # Move files to the right places and remove unnecessary files
 mv %{buildroot}/%{pypyprefix}/bin/libpypy-c.so %{buildroot}/%{_libdir}
 rm -rf %{buildroot}/%{_libdir}/%{name}-%{basever}.tar.bz2
-rm -rf %{buildroot}/%{pypyprefix}/LICENSE
 rm -rf %{buildroot}/%{pypyprefix}/README.rst
 rm -rf %{buildroot}/%{pypyprefix}/README.rst
 rm -rf %{buildroot}/%{pypy_include_dir}/README
@@ -763,16 +762,16 @@ CheckPyPy %{name}-c-stackless
 %endif # run_selftests
 
 # Because there's a bunch of binary subpackages and creating
-# /usr/share/licenses/pypy3-this and /usr/share/licenses/pypy3-that
+# /usr/share/doc/pypy3-this and /usr/share/doc/pypy3-that
 # is just confusing for the user.
 %global _docdir_fmt %{name}
 
 %files libs
-%license LICENSE
 %doc README.rst
 
 %dir %{pypyprefix}
 %dir %{pypyprefix}/lib-python
+%license %{pypyprefix}/LICENSE
 %{_libdir}/libpypy-c.so
 %{pypyprefix}/lib-python/%{pylibver}/
 %{pypyprefix}/lib_pypy/
@@ -783,7 +782,6 @@ CheckPyPy %{name}-c-stackless
 %endif
 
 %files
-%license LICENSE
 %doc README.rst
 %{_bindir}/%{name}
 %{_bindir}/%{name}%{pylibver}
@@ -799,7 +797,6 @@ CheckPyPy %{name}-c-stackless
 
 %if 0%{with_stackless}
 %files stackless
-%license LICENSE
 %doc README.rst
 %{_bindir}/%{name}-stackless
 %endif
