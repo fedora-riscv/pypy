@@ -2,7 +2,7 @@
 Name:           pypy
 Version:        %{basever}.1
 %global pyversion 2.7
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # LGPL and another free license we'd need to ask spot about are present in some
@@ -13,8 +13,7 @@ License:        MIT and Python and UCD
 URL:            http://pypy.org/
 
 # aarch64: Not available yet
-# ppc64: Broken on F29+ https://bugzilla.redhat.com/show_bug.cgi?id=1619690
-ExcludeArch: aarch64 %{power64}
+ExcludeArch: aarch64
 
 # High-level configuration of the build:
 
@@ -803,6 +802,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Sat Jul 27 2019 Peter Robinson <pbrobinson@fedoraproject.org> 7.1.1-3
+- Re-enable power64 builds
+
 * Fri Jul 26 2019 Fedora Release Engineering <releng@fedoraproject.org> - 7.1.1-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_31_Mass_Rebuild
 
