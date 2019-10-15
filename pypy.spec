@@ -178,7 +178,7 @@ Source189: 189-use-rpm-wheels.patch
 
 %global use_self_when_building 0
 
-%ifnarch 0%{use_self_when_building}
+%if 0%{use_self_when_building}
 BuildRequires: pypy
 %global bootstrap_python_interp pypy2
 %else
