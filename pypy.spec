@@ -2,7 +2,7 @@
 Name:           pypy
 Version:        %{basever}.0
 %global pyversion 2.7
-Release:        0.1%{?dist}
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # LGPL and another free license we'd need to ask spot about are present in some
@@ -97,6 +97,7 @@ URL:            http://pypy.org/
 
 %global src_name %{ver_name}-v%{version}-src
 
+# aarch64: https://bitbucket.org/pypy/pypy/issues/3086
 %ifarch %{ix86} x86_64 %{arm} s390x
 %global with_jit 1
 %else
@@ -176,7 +177,15 @@ Source189: 189-use-rpm-wheels.patch
 # Turn it off with this boolean, to revert back to rebuilding using CPython
 # and avoid a cycle in the build-time dependency graph:
 
+%global use_self_when_building 1
+# Getting strange error on ppc64 arch when building with PyPy,
+# use CPython for ppc64 temporarily
+# https://koji.fedoraproject.org/koji/taskinfo?taskID=23000326
+# TODO: resolve this and remove power64 part of condition
+# aarch64 just got introduced, need to use cpython to bootstrap
+%ifarch %{power64} aarch64
 %global use_self_when_building 0
+%endif
 
 %if 0%{use_self_when_building}
 BuildRequires: pypy
@@ -793,8 +802,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
-* Tue Oct 15 2019 Peter Robinson <pbrobinson@fedoraproject.org> 7.2.0-0.1
-- Bootstrap aarch64 with new 7.2.0
+* Mon Oct 14 2019 Miro Hrončok <mhroncok@redhat.com> - 7.2.0-1
+- Update to 7.2.0
+- Enable aarch64
 
 * Sat Jul 27 2019 Peter Robinson <pbrobinson@fedoraproject.org> 7.1.1-3
 - Re-enable power64 builds
