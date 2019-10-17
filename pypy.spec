@@ -2,7 +2,7 @@
 Name:           pypy
 Version:        %{basever}.0
 %global pyversion 2.7
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # LGPL and another free license we'd need to ask spot about are present in some
@@ -98,7 +98,7 @@ URL:            http://pypy.org/
 %global src_name %{ver_name}-v%{version}-src
 
 # aarch64: https://bitbucket.org/pypy/pypy/issues/3086
-%ifarch %{ix86} x86_64 %{arm} s390x
+%ifarch %{ix86} x86_64 %{arm} s390x %{power64}
 %global with_jit 1
 %else
 %global with_jit 0
@@ -182,8 +182,7 @@ Source189: 189-use-rpm-wheels.patch
 # use CPython for ppc64 temporarily
 # https://koji.fedoraproject.org/koji/taskinfo?taskID=23000326
 # TODO: resolve this and remove power64 part of condition
-# aarch64 just got introduced, need to use cpython to bootstrap
-%ifarch %{power64} aarch64
+%ifarch %{power64}
 %global use_self_when_building 0
 %endif
 
@@ -802,6 +801,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Wed Oct 16 2019 Miro Hrončok <mhroncok@redhat.com> - 7.2.0-2
+- Enable JIT on power64
+
 * Mon Oct 14 2019 Miro Hrončok <mhroncok@redhat.com> - 7.2.0-1
 - Update to 7.2.0
 - Enable aarch64
