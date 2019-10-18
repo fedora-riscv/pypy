@@ -178,20 +178,12 @@ Source189: 189-use-rpm-wheels.patch
 # and avoid a cycle in the build-time dependency graph:
 
 %global use_self_when_building 1
-# Getting strange error on ppc64 arch when building with PyPy,
-# use CPython for ppc64 temporarily
-# https://koji.fedoraproject.org/koji/taskinfo?taskID=23000326
-# TODO: resolve this and remove power64 part of condition
-%ifarch %{power64}
-%global use_self_when_building 0
-%endif
-
 %if 0%{use_self_when_building}
-BuildRequires: pypy
+BuildRequires: pypy2
 %global bootstrap_python_interp pypy2
 %else
-BuildRequires: python2-devel
-BuildRequires: python2-pycparser
+# exception to use Python 2: https://pagure.io/fesco/issue/2130
+BuildRequires: python27
 %global bootstrap_python_interp python2
 %endif
 
@@ -343,6 +335,11 @@ find lib-python/%{pylibver} -name "*.py" -exec \
   sed -r -i '1s|^#!\s*/usr/bin.*python.*|#!/usr/bin/%{name}|' \
     "{}" \
     \;
+
+%if ! 0%{use_self_when_building}
+  # use the pycparser from PyPy even on CPython
+  ln -s lib_pypy/cffi/_pycparser pycparser
+%endif
 
 %build
 %ifarch s390x
