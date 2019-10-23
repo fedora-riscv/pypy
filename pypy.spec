@@ -2,7 +2,7 @@
 Name:           pypy
 Version:        %{basever}.0
 %global pyversion 2.7
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # LGPL and another free license we'd need to ask spot about are present in some
@@ -97,8 +97,7 @@ URL:            http://pypy.org/
 
 %global src_name %{ver_name}-v%{version}-src
 
-# aarch64: https://bitbucket.org/pypy/pypy/issues/3086
-%ifarch %{ix86} x86_64 %{arm} s390x %{power64}
+%ifarch %{ix86} x86_64 %{arm} s390x %{power64} aarch64
 %global with_jit 1
 %else
 %global with_jit 0
@@ -163,6 +162,9 @@ Patch1: 007-remove-startup-message.patch
 # to be added to privent compilation error.
 # https://fedoraproject.org/wiki/Changes/Replace_glibc_libcrypt_with_libxcrypt
 Patch2: 009-add-libxcrypt-support.patch
+
+# https://bitbucket.org/pypy/pypy/issues/3086
+Patch3: d81c769a235307f6671a8fa916f48d6896cbb823.patch
 
 # Instead of bundled wheels, use our RPM packaged wheels from
 # /usr/share/python-wheels
@@ -798,6 +800,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Wed Oct 23 2019 Miro Hrončok <mhroncok@redhat.com> - 7.2.0-3
+- Enable JIT on aarch64
+
 * Wed Oct 16 2019 Miro Hrončok <mhroncok@redhat.com> - 7.2.0-2
 - Enable JIT on power64
 
