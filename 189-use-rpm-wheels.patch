@@ -1,5 +1,5 @@
 diff --git a/lib-python/2.7/ensurepip/__init__.py b/lib-python/2.7/ensurepip/__init__.py
-index c2abed8..bd1aa79 100644
+index ae01aa7..f1311be 100644
 --- a/lib-python/2.7/ensurepip/__init__.py
 +++ b/lib-python/2.7/ensurepip/__init__.py
 @@ -1,9 +1,10 @@
@@ -20,9 +20,9 @@ index c2abed8..bd1aa79 100644
  
 +_WHEEL_DIR = "/usr/share/python-wheels/"
  
--_SETUPTOOLS_VERSION = "28.8.0"
+-_SETUPTOOLS_VERSION = "41.2.0"
  
--_PIP_VERSION = "9.0.1"
+-_PIP_VERSION = "19.2.3"
 +def _get_most_recent_wheel_version(pkg):
 +    prefix = os.path.join(_WHEEL_DIR, "{}-".format(pkg))
 +    suffix = "-py2.py3-none-any.whl"
@@ -37,23 +37,7 @@ index c2abed8..bd1aa79 100644
  
  _PROJECTS = [
      ("setuptools", _SETUPTOOLS_VERSION),
-@@ -28,8 +39,13 @@ def _run_pip(args, additional_paths=None):
-         sys.path = additional_paths + sys.path
- 
-     # Install the bundled software
--    import pip
--    pip.main(args)
-+    try:
-+        # pip 10
-+        from pip._internal import main
-+    except ImportError:
-+        # pip 9
-+        from pip import main
-+    main(args)
- 
- 
- def version():
-@@ -85,12 +101,9 @@ def bootstrap(root=None, upgrade=False, user=False,
+@@ -85,12 +96,9 @@ def bootstrap(root=None, upgrade=False, user=False,
          additional_paths = []
          for project, version in _PROJECTS:
              wheel_name = "{}-{}-py2.py3-none-any.whl".format(project, version)

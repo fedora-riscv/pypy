@@ -1,8 +1,8 @@
-%global basever 7.2
+%global basever 7.3
 Name:           pypy
 Version:        %{basever}.0
 %global pyversion 2.7
-Release:        3%{?dist}
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # LGPL and another free license we'd need to ask spot about are present in some
@@ -162,9 +162,6 @@ Patch1: 007-remove-startup-message.patch
 # to be added to privent compilation error.
 # https://fedoraproject.org/wiki/Changes/Replace_glibc_libcrypt_with_libxcrypt
 Patch2: 009-add-libxcrypt-support.patch
-
-# https://bitbucket.org/pypy/pypy/issues/3086
-Patch3: d81c769a235307f6671a8fa916f48d6896cbb823.patch
 
 # Instead of bundled wheels, use our RPM packaged wheels from
 # /usr/share/python-wheels
@@ -800,6 +797,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Sat Dec 28 2019 Miro Hrončok <mhroncok@redhat.com> - 7.3.0-1
+- Update to 7.3.0
+
 * Wed Oct 23 2019 Miro Hrončok <mhroncok@redhat.com> - 7.2.0-3
 - Enable JIT on aarch64
 
