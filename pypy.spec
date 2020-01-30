@@ -2,7 +2,7 @@
 Name:           pypy
 Version:        %{basever}.0
 %global pyversion 2.7
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # LGPL and another free license we'd need to ask spot about are present in some
@@ -797,6 +797,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Thu Jan 30 2020 Fedora Release Engineering <releng@fedoraproject.org> - 7.3.0-2
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_32_Mass_Rebuild
+
 * Sat Dec 28 2019 Miro Hrončok <mhroncok@redhat.com> - 7.3.0-1
 - Update to 7.3.0
 
