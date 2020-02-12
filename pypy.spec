@@ -228,7 +228,7 @@ BuildRequires:  emacs
 BuildRequires:  %{_bindir}/git
 
 %if %{with rpmwheels}
-BuildRequires: python-setuptools-wheel
+BuildRequires: python-setuptools-wheel < 45
 BuildRequires: python-pip-wheel
 %endif
 
@@ -256,6 +256,39 @@ CPU architecture.
 %package libs
 Summary:  Run-time libraries used by PyPy implementations of Python
 
+%if %{without rpmwheels}
+# PyPy is MIT and Python and UCD (see the main package license)
+# setuptools is MIT and bundles:
+#   packaging: BSD or ASL 2.0
+#   pyparsing: MIT
+#   six: MIT
+# pip is MIT and bundles:
+#   appdirs: MIT
+#   distlib: Python
+#   distro: ASL 2.0
+#   html5lib: MIT
+#   six: MIT
+#   colorama: BSD
+#   CacheControl: ASL 2.0
+#   msgpack-python: ASL 2.0
+#   lockfile: MIT
+#   progress: ISC
+#   ipaddress: Python
+#   packaging: ASL 2.0 or BSD
+#   pep517: MIT
+#   pyparsing: MIT
+#   pytoml: MIT
+#   retrying: ASL 2.0
+#   requests: ASL 2.0
+#   chardet: LGPLv2
+#   idna: BSD
+#   urllib3: MIT
+#   certifi: MPLv2.0
+#   setuptools: MIT
+#   webencodings: BSD
+License: MIT and Python and UCD and ASL 2.0 and BSD and ISC and LGPLv2 and MPLv2.0 and (ASL 2.0 or BSD)
+%endif
+
 # We supply an emacs mode for the JIT viewer.
 # (This doesn't bring in all of emacs, just the directory structure)
 %if %{with_emacs}
@@ -263,11 +296,38 @@ Requires: emacs-filesystem >= %{_emacs_version}
 %endif
 
 %if %{with rpmwheels}
-Requires: python-setuptools-wheel
+Requires: python-setuptools-wheel < 45
 Requires: python-pip-wheel
 %else
-Provides: bundled(python3-pip) = 9.0.1
-Provides: bundled(python3-setuptools) = 28.8.0
+Provides: bundled(python2dist(setuptools)) = 41.2.0
+Provides: bundled(python2dist(packaging)) = 16.8
+Provides: bundled(python2dist(pyparsing)) = 2.2.1
+Provides: bundled(python2dist(six)) = 1.10.0
+
+Provides: bundled(python2dist(pip)) = 19.2.3
+Provides: bundled(python2dist(appdirs)) = 1.4.3
+Provides: bundled(python2dist(CacheControl)) = 0.12.5
+Provides: bundled(python2dist(certifi)) = 2019.6.16
+Provides: bundled(python2dist(chardet)) = 3.0.4
+Provides: bundled(python2dist(colorama)) = 0.4.1
+Provides: bundled(python2dist(distlib)) = 0.2.9.post0
+Provides: bundled(python2dist(distro)) = 1.4.0
+Provides: bundled(python2dist(html5lib)) = 1.0.1
+Provides: bundled(python2dist(idna)) = 2.8
+Provides: bundled(python2dist(ipaddress)) = 1.0.22
+Provides: bundled(python2dist(lockfile)) = 0.12.2
+Provides: bundled(python2dist(msgpack)) = 0.6.1
+Provides: bundled(python2dist(packaging)) = 19.0
+Provides: bundled(python2dist(pep517)) = 0.5.0
+Provides: bundled(python2dist(progress)) = 1.5
+Provides: bundled(python2dist(pyparsing)) = 2.4.0
+Provides: bundled(python2dist(pytoml)) = 0.1.20
+Provides: bundled(python2dist(requests)) = 2.22.0
+Provides: bundled(python2dist(retrying)) = 1.3.3
+Provides: bundled(python2dist(setuptools)) = 41.0.1
+Provides: bundled(python2dist(six)) = 1.12.0
+Provides: bundled(python2dist(urllib3)) = 1.25.3
+Provides: bundled(python2dist(webencodings)) = 0.5.1
 %endif
 
 Provides: %{ver_name}-libs = %{version}-%{release}
