@@ -2,7 +2,7 @@
 Name:           pypy
 Version:        %{basever}.0
 %global pyversion 2.7
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # LGPL and another free license we'd need to ask spot about are present in some
@@ -16,7 +16,8 @@ URL:            http://pypy.org/
 
 # Whether to use RPM build wheels from the python-{pip,setuptools}-wheel package
 # Uses upstream bundled prebuilt wheels otherwise
-%bcond_without rpmwheels
+# setuptools >= 45.0 no longer support Python 2.7, hence disabled
+%bcond_with rpmwheels
 
 # PyPy consists of an implementation of an interpreter (with JIT compilation)
 # for the full Python language  written in a high-level language, leaving many
@@ -857,6 +858,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Wed Feb 12 2020 Miro Hrončok <mhroncok@redhat.com> - 7.3.0-3
+- Use bundled wheels, to allow updating setuptools in Fedora
+
 * Thu Jan 30 2020 Fedora Release Engineering <releng@fedoraproject.org> - 7.3.0-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_32_Mass_Rebuild
 
