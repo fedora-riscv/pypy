@@ -1,8 +1,8 @@
 %global basever 7.3
 Name:           pypy
-Version:        %{basever}.0
+Version:        %{basever}.1
 %global pyversion 2.7
-Release:        2%{?dist}
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # LGPL and another free license we'd need to ask spot about are present in some
@@ -299,34 +299,35 @@ Requires: emacs-filesystem >= %{_emacs_version}
 Requires: python-setuptools-wheel < 45
 Requires: python-pip-wheel
 %else
-Provides: bundled(python2dist(setuptools)) = 41.2.0
+Provides: bundled(python2dist(setuptools)) = 44.0.0
 Provides: bundled(python2dist(packaging)) = 16.8
 Provides: bundled(python2dist(pyparsing)) = 2.2.1
 Provides: bundled(python2dist(six)) = 1.10.0
 
-Provides: bundled(python2dist(pip)) = 19.2.3
+Provides: bundled(python2dist(pip)) = 20.0.2
 Provides: bundled(python2dist(appdirs)) = 1.4.3
-Provides: bundled(python2dist(CacheControl)) = 0.12.5
-Provides: bundled(python2dist(certifi)) = 2019.6.16
+Provides: bundled(python2dist(CacheControl)) = 0.12.6
+Provides: bundled(python2dist(contextlib2)) = 0.6.0
+Provides: bundled(python2dist(certifi)) = 2019.11.28
 Provides: bundled(python2dist(chardet)) = 3.0.4
-Provides: bundled(python2dist(colorama)) = 0.4.1
-Provides: bundled(python2dist(distlib)) = 0.2.9.post0
+Provides: bundled(python2dist(colorama)) = 0.4.3
+Provides: bundled(python2dist(distlib)) = 0.3.0
 Provides: bundled(python2dist(distro)) = 1.4.0
 Provides: bundled(python2dist(html5lib)) = 1.0.1
 Provides: bundled(python2dist(idna)) = 2.8
-Provides: bundled(python2dist(ipaddress)) = 1.0.22
+Provides: bundled(python2dist(ipaddress)) = 1.0.23
 Provides: bundled(python2dist(lockfile)) = 0.12.2
-Provides: bundled(python2dist(msgpack)) = 0.6.1
-Provides: bundled(python2dist(packaging)) = 19.0
-Provides: bundled(python2dist(pep517)) = 0.5.0
+Provides: bundled(python2dist(msgpack)) = 0.6.2
+Provides: bundled(python2dist(packaging)) = 20.1
+Provides: bundled(python2dist(pep517)) = 0.7.0
 Provides: bundled(python2dist(progress)) = 1.5
-Provides: bundled(python2dist(pyparsing)) = 2.4.0
-Provides: bundled(python2dist(pytoml)) = 0.1.20
+Provides: bundled(python2dist(pyparsing)) = 2.4.6
+Provides: bundled(python2dist(pytoml)) = 0.1.21
 Provides: bundled(python2dist(requests)) = 2.22.0
 Provides: bundled(python2dist(retrying)) = 1.3.3
-Provides: bundled(python2dist(setuptools)) = 41.0.1
-Provides: bundled(python2dist(six)) = 1.12.0
-Provides: bundled(python2dist(urllib3)) = 1.25.3
+Provides: bundled(python2dist(setuptools)) = 44.0.0
+Provides: bundled(python2dist(six)) = 1.14.0
+Provides: bundled(python2dist(urllib3)) = 1.25.7
 Provides: bundled(python2dist(webencodings)) = 0.5.1
 %endif
 
@@ -857,6 +858,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Mon Apr 20 2020 Tomas Hrnciar <thrnciar@redhat.com> - 7.3.1-1
+- Update to 7.3.1
+
 * Thu Jan 30 2020 Fedora Release Engineering <releng@fedoraproject.org> - 7.3.0-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_32_Mass_Rebuild
 
