@@ -384,6 +384,9 @@ Build of PyPy with support for micro-threads for massive concurrency
 %prep
 %autosetup -n pypy%{pyversion}-v%{version}-src -p1 -S git
 
+# Temporary workaround for https://bugzilla.redhat.com/show_bug.cgi?id=1954999
+%{?!apply_patch:%define apply_patch(qp:m:) {%__apply_patch %**}}
+
 %if %{with rpmwheels}
 %apply_patch -m %(basename %{SOURCE189}) %{SOURCE189}
 rm lib-python/2.7/ensurepip/_bundled/*.whl
