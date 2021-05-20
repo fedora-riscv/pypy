@@ -1,8 +1,8 @@
 %global basever 7.3
 Name:           pypy
-Version:        %{basever}.1
+Version:        %{basever}.4
 %global pyversion 2.7
-Release:        4%{?dist}
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # PyPy is MIT
@@ -146,7 +146,7 @@ URL:            http://pypy.org/
   %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
 
 # Source and patches:
-Source0: https://bitbucket.org/pypy/pypy/downloads/pypy%{pyversion}-v%{version}-src.tar.bz2
+Source0: https://downloads.python.org/pypy/pypy%{pyversion}-v%{version}-src.tar.bz2
 
 # Supply various useful RPM macros for building python modules against pypy:
 #  __pypy, pypy_sitelib, pypy_sitearch
@@ -579,7 +579,7 @@ mkdir -p %{buildroot}/%{pypyprefix}
 
 
 # Run installing script,  archive-name  %{name}-%{basever} in %{buildroot}/%{_libdir} == %{pypyprefix}
-%{bootstrap_python_interp} pypy/tool/release/package.py --archive-name %{name}-%{basever} --builddir %{buildroot}/%{_libdir}
+%{bootstrap_python_interp} pypy/tool/release/package.py --archive-name %{name}-%{basever} --builddir %{buildroot}/%{_libdir} --no-embedded-dependencies
 
 # Remove shebang lines from .py files that aren't executable, and
 # remove executability from .py files that don't have a shebang line:
@@ -877,6 +877,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Tue May 25 2021 Miro Hrončok <mhroncok@redhat.com> - 7.3.4-1
+- Update to 7.3.4
+
 * Tue May 25 2021 Miro Hrončok <mhroncok@redhat.com> - 7.3.1-4
 - Provide missing bundled library information
 
