@@ -2,14 +2,20 @@
 Name:           pypy
 Version:        %{basever}.1
 %global pyversion 2.7
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
+# PyPy is MIT
+# Python standard library is Python
+# pypy/module/unicodedata is UCD
+# Bundled pycparser is is BSD
+# Bundled pycparser.ply is BSD
+# Bundled bits from cryptography are ASL 2.0 or BSD
 # LGPL and another free license we'd need to ask spot about are present in some
 # java jars that we're not building with atm (in fact, we're deleting them
 # before building).  If we restore those we'll have to work out the new
 # licensing terms
-License:        MIT and Python and UCD
+License:        MIT and Python and UCD and BSD and (ASL 2.0 or BSD)
 URL:            http://pypy.org/
 
 # High-level configuration of the build:
@@ -258,7 +264,7 @@ CPU architecture.
 Summary:  Run-time libraries used by PyPy implementations of Python
 
 %if %{without rpmwheels}
-# PyPy is MIT and Python and UCD (see the main package license)
+# PyPy is MIT and Python and UCD and BSD and (ASL 2.0 or BSD) (see the main package license)
 # setuptools is MIT and bundles:
 #   packaging: BSD or ASL 2.0
 #   pyparsing: MIT
@@ -287,7 +293,7 @@ Summary:  Run-time libraries used by PyPy implementations of Python
 #   certifi: MPLv2.0
 #   setuptools: MIT
 #   webencodings: BSD
-License: MIT and Python and UCD and ASL 2.0 and BSD and ISC and LGPLv2 and MPLv2.0 and (ASL 2.0 or BSD)
+License: MIT and Python and UCD and BSD and (ASL 2.0 or BSD) and BSD and ASL 2.0 and ISC and LGPLv2 and MPLv2.0 and (ASL 2.0 or BSD)
 %endif
 
 # We supply an emacs mode for the JIT viewer.
@@ -331,6 +337,15 @@ Provides: bundled(python2dist(six)) = 1.14.0
 Provides: bundled(python2dist(urllib3)) = 1.25.7
 Provides: bundled(python2dist(webencodings)) = 0.5.1
 %endif
+
+# Find the version in lib_pypy/cffi/_pycparser/__init__.py
+Provides: bundled(python2dist(pycparser)) = 2.20
+
+# Find the version in lib_pypy/cffi/_pycparser/ply/__init__.py
+Provides: bundled(python2dist(ply)) = 3.9
+
+# Find the version in lib_pypy/_cffi_ssl/cryptography/__about__.py
+Provides: bundled(python2dist(cryptography)) = 2.7
 
 Provides: %{ver_name}-libs = %{version}-%{release}
 Provides: %{ver_name}-libs%{_isa} = %{version}-%{release}
@@ -859,6 +874,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Tue May 25 2021 Miro Hrončok <mhroncok@redhat.com> - 7.3.1-4
+- Provide missing bundled library information
+
 * Wed Jan 27 2021 Fedora Release Engineering <releng@fedoraproject.org> - 7.3.1-3
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_34_Mass_Rebuild
 
