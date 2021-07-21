@@ -2,7 +2,7 @@
 Name:           pypy
 Version:        %{basever}.4
 %global pyversion 2.7
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # PyPy is MIT
@@ -140,11 +140,6 @@ URL:            http://pypy.org/
 %global goal_dir pypy/goal
 
 
-# Turn off the brp-python-bytecompile postprocessing script
-# We manually invoke it later on, using the freshly built pypy binary
-%global __os_install_post \
-  %(echo '%{__os_install_post}' | sed -e 's!/usr/lib[^[:space:]]*/brp-python-bytecompile[[:space:]].*$!!g')
-
 # Source and patches:
 Source0: https://downloads.python.org/pypy/pypy%{pyversion}-v%{version}-src.tar.bz2
 
@@ -208,6 +203,9 @@ BuildRequires:  expat-devel
 BuildRequires:  openssl-devel
 BuildRequires:  gdbm-devel
 BuildRequires:  chrpath
+
+BuildRequires:  python-rpm-macros
+
 %ifnarch s390
 BuildRequires:  valgrind-devel
 %endif
@@ -601,19 +599,12 @@ find \
 execstack --clear-execstack %{buildroot}/%{pypyprefix}/bin/pypy
 
 # Bytecompile all of the .py files we ship, using our pypy binary, giving us
-# .pyc files for pypy.  The script actually does the work twice (passing in -O
-# the second time) but it's simplest to reuse that script.
-#
-# The script has special-casing for .py files below
-#    /usr/lib{64}/python[0-9].[0-9]
-# but given that we're installing into a different path, the supplied "default"
-# implementation gets used instead.
+# .pyc files for pypy.
 #
 # Note that some of the test files deliberately contain syntax errors, so
-# we pass 0 for the second argument ("errors_terminate"):
-/usr/lib/rpm/brp-python-bytecompile \
-  %{buildroot}%{pypyprefix}/bin/%{name} \
-  0
+# we are running it in subshell, to be able to ignore the failures and not to terminate the build.
+(%{py_byte_compile %{buildroot}%{pypyprefix}/bin/pypy %{buildroot}%{pypyprefix}}) || :
+
 
 %{buildroot}%{pypyprefix}/bin/%{name} -c 'import _tkinter'
 %{buildroot}%{pypyprefix}/bin/%{name} -c 'import Tkinter'
@@ -877,6 +868,10 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Wed Jul 21 2021 Tomas Hrnciar <thrnciar@redhat.com> - 7.3.4-2
+- Replace removed /usr/lib/rpm/brp-python-bytecompile with %%py_byte_compile macros
+- Fixes: rhbz#1976656
+
 * Tue May 25 2021 Miro Hrončok <mhroncok@redhat.com> - 7.3.4-1
 - Update to 7.3.4
 
