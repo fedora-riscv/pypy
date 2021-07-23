@@ -2,7 +2,7 @@
 Name:           pypy
 Version:        %{basever}.4
 %global pyversion 2.7
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # PyPy is MIT
@@ -868,6 +868,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Fri Jul 23 2021 Fedora Release Engineering <releng@fedoraproject.org> - 7.3.4-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_35_Mass_Rebuild
+
 * Wed Jul 21 2021 Tomas Hrnciar <thrnciar@redhat.com> - 7.3.4-2
 - Replace removed /usr/lib/rpm/brp-python-bytecompile with %%py_byte_compile macros
 - Fixes: rhbz#1976656
