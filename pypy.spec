@@ -2,7 +2,7 @@
 Name:           pypy
 Version:        %{basever}.5
 %global pyversion 2.7
-Release:        1%{?dist}
+Release:        2%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # PyPy is MIT
@@ -868,6 +868,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Tue Sep 14 2021 Sahana Prasad <sahana@redhat.com> - 7.3.5-2
+- Rebuilt with OpenSSL 3.0.0
+
 * Mon Aug 16 2021 Miro Hrončok <mhroncok@redhat.com> - 7.3.5-1
 - Update to 7.3.5
 - Fixes: rhbz#1992600
