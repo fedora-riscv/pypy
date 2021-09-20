@@ -200,7 +200,7 @@ BuildRequires:  zlib-devel
 BuildRequires:  bzip2-devel
 BuildRequires:  ncurses-devel
 BuildRequires:  expat-devel
-BuildRequires:  openssl-devel
+BuildRequires:  openssl1.1-devel
 BuildRequires:  gdbm-devel
 BuildRequires:  chrpath
 
@@ -868,8 +868,8 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
-* Tue Sep 14 2021 Sahana Prasad <sahana@redhat.com> - 7.3.5-2
-- Rebuilt with OpenSSL 3.0.0
+* Mon Sep 20 2021 Miro Hrončok <mhroncok@redhat.com> - 7.3.5-2
+- Explicitly buildrequire OpenSSL 1.1, as Python 2 is not compatible with OpenSSL 3.0
 
 * Mon Aug 16 2021 Miro Hrončok <mhroncok@redhat.com> - 7.3.5-1
 - Update to 7.3.5
