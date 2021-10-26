@@ -1,8 +1,8 @@
 %global basever 7.3
 Name:           pypy
-Version:        %{basever}.5
+Version:        %{basever}.6
 %global pyversion 2.7
-Release:        2%{?dist}
+Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # PyPy is MIT
@@ -868,6 +868,10 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Tue Oct 26 2021 Tomáš Hrnčiar <thrnciar@redhat.com> - 7.3.6-1
+- Update to 7.3.6
+- Fixes: rhbz#2003681
+
 * Mon Sep 20 2021 Miro Hrončok <mhroncok@redhat.com> - 7.3.5-2
 - Explicitly buildrequire OpenSSL 1.1, as Python 2 is not compatible with OpenSSL 3.0
 
