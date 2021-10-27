@@ -418,6 +418,9 @@ find lib-python/%{pylibver} -name "*.py" -exec \
   ln -s lib_pypy/cffi/_pycparser pycparser
 %endif
 
+# Remove windows executable binaries
+rm lib-python/2.7/distutils/command/*.exe
+
 %build
 %ifarch s390x
 # pypy3 requires z10 at least
@@ -870,7 +873,9 @@ CheckPyPy %{name}-c-stackless
 %changelog
 * Tue Oct 26 2021 Tomáš Hrnčiar <thrnciar@redhat.com> - 7.3.6-1
 - Update to 7.3.6
+- Remove windows executable binaries
 - Fixes: rhbz#2003681
+- Fixes: rhbz#2005457
 
 * Mon Sep 20 2021 Miro Hrončok <mhroncok@redhat.com> - 7.3.5-2
 - Explicitly buildrequire OpenSSL 1.1, as Python 2 is not compatible with OpenSSL 3.0
