@@ -2,7 +2,7 @@
 Name:           pypy
 Version:        %{basever}.6
 %global pyversion 2.7
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # PyPy is MIT
@@ -871,6 +871,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Fri Jan 21 2022 Fedora Release Engineering <releng@fedoraproject.org> - 7.3.6-3
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_36_Mass_Rebuild
+
 * Sat Jan 08 2022 Miro Hrončok <mhroncok@redhat.com> - 7.3.6-2
 - Rebuilt for https://fedoraproject.org/wiki/Changes/LIBFFI34
 
