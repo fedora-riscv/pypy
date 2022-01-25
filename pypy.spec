@@ -139,6 +139,9 @@ URL:            http://pypy.org/
 # We refer to this subdir of the source tree in a few places during the build:
 %global goal_dir pypy/goal
 
+%ifarch %{ix86} x86_64 %{arm}
+%global _package_note_linker gold
+%endif
 
 # Source and patches:
 Source0: https://downloads.python.org/pypy/pypy%{pyversion}-v%{version}-src.tar.bz2
