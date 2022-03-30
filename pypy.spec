@@ -1,3 +1,7 @@
+# Note: When this is updated to 7.4,
+# the installation layout will change in a backwards-incompatible way.
+# That'll be a good time to rename this to pypy2.7 and adapt %%pypyprefix to be
+# %%{_libdir}/pypy%%{pyversion} (see e.g. pypy3.7 or pypy3.8 for inspiration).
 %global basever 7.3
 Name:           pypy
 Version:        %{basever}.9
