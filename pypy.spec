@@ -1,6 +1,6 @@
 %global basever 7.3
 Name:           pypy
-Version:        %{basever}.8
+Version:        %{basever}.9
 %global pyversion 2.7
 Release:        1%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
@@ -857,7 +857,7 @@ CheckPyPy %{name}-c-stackless
 %{_bindir}/%{name}
 %{_bindir}/%{name}%{pylibver}
 %{_bindir}/%{name}%{pymajorlibver}
-%{pypyprefix}/bin/%{name}
+%{pypyprefix}/bin/
 
 %files devel
 %dir %{pypy_include_dir}
@@ -874,6 +874,10 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Wed Mar 30 2022 Miro Hrončok <mhroncok@redhat.com> - 7.3.9-1
+- Update to 7.3.9
+- Fixes: rhbz#2069872
+
 * Tue Mar 01 2022 Miro Hrončok <mhroncok@redhat.com> - 7.3.8-1
 - Update to 7.3.8
 - Fixes: rhbz#2046555
