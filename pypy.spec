@@ -18,6 +18,11 @@ Summary:        Python implementation with a Just-In-Time compiler
 License:        MIT and Python and UCD and BSD and (ASL 2.0 or BSD)
 URL:            http://pypy.org/
 
+# https://fedoraproject.org/wiki/Changes/EncourageI686LeafRemoval
+%if 0%{?fedora} >= 37 || 0%{?rhel} >= 10
+ExcludeArch:    %{ix86}
+%endif
+
 # High-level configuration of the build:
 
 # Whether to use RPM build wheels from the python-{pip,setuptools}-wheel package
