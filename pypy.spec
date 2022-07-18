@@ -6,7 +6,7 @@
 Name:           pypy
 Version:        %{basever}.9
 %global pyversion 2.7
-Release:        2%{?dist}
+Release:        3%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # PyPy is MIT
@@ -222,7 +222,7 @@ BuildRequires:  zlib-devel
 BuildRequires:  bzip2-devel
 BuildRequires:  ncurses-devel
 BuildRequires:  expat-devel
-BuildRequires:  openssl1.1-devel
+BuildRequires:  openssl-devel
 BuildRequires:  gdbm-devel
 BuildRequires:  chrpath
 
@@ -893,6 +893,11 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Mon Jul 18 2022 Miro Hrončok <mhroncok@redhat.com> - 7.3.9-3
+- Use OpenSSL 3 on Fedora 36+
+- https://fedoraproject.org/wiki/Changes/OpenSSL3.0
+- https://fedoraproject.org/wiki/Changes/DeprecateOpensslCompat
+
 * Tue Jun 28 2022 Charalampos Stratakis <cstratak@redhat.com> - 7.3.9-2
 - Security fix for CVE-2015-20107
 - Fixes: rhbz#2075390
