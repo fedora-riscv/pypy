@@ -6,7 +6,7 @@
 Name:           pypy
 Version:        %{basever}.9
 %global pyversion 2.7
-Release:        3%{?dist}
+Release:        4%{?dist}
 Summary:        Python implementation with a Just-In-Time compiler
 
 # PyPy is MIT
@@ -893,6 +893,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Fri Jul 22 2022 Fedora Release Engineering <releng@fedoraproject.org> - 7.3.9-4
+- Rebuilt for https://fedoraproject.org/wiki/Fedora_37_Mass_Rebuild
+
 * Mon Jul 18 2022 Miro Hrončok <mhroncok@redhat.com> - 7.3.9-3
 - Use OpenSSL 3 on Fedora 36+
 - https://fedoraproject.org/wiki/Changes/OpenSSL3.0
