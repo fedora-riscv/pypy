@@ -196,7 +196,13 @@ Patch382: 382-cve-2015-20107.patch
 # Turn it off with this boolean, to revert back to rebuilding using CPython
 # and avoid a cycle in the build-time dependency graph:
 
+%bcond_without bootstrap
+
+%if %{with bootstrap}
+%global use_self_when_building 0
+%else
 %global use_self_when_building 1
+%endif
 %if 0%{use_self_when_building}
 BuildRequires: pypy2
 %global bootstrap_python_interp pypy2
@@ -867,6 +873,9 @@ CheckPyPy %{name}-c-stackless
 
 
 %changelog
+* Thu May 11 2023 Liu Yang <Yang.Liu.sn@gmail.com> - 7.3.11-2~bootstrap
+- Bootstrap for Fedora 38 riscv64.
+
 * Fri Jan 20 2023 Fedora Release Engineering <releng@fedoraproject.org> - 7.3.11-2
 - Rebuilt for https://fedoraproject.org/wiki/Fedora_38_Mass_Rebuild
 
